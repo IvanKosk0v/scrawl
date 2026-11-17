@@ -1,14 +1,14 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
-Current milestone: M3
-Current task: M3 close (`/milestone`), then M4.1
-Branch: m3-grab
-Last session: M3.4 done
+Current milestone: M4
+Current task: M4.1
+Branch: main (create m4-actions from main before M4.1)
+Last session: M3 closed
 
 ## Handoff
-Done: M3 review MED fixes. `run` rejects an escape chord the mouse can't press (MouseCaps::check_escape); overflow test proves a lost trigger release recovers.
-Next: rerun `/milestone` for M3 (verify, then merge on user yes), then M4.1 (key combo via uinput keyboard).
-Fragile: pointer frozen while trigger held (by design). After SYN_DROPPED, evdev delivers the compensating release only on the next device event. Not yet tried on a real mouse; test with `run --timeout 20`.
+Done: M3 merged to main (not pushed). User verified `run --timeout 20` on a real mouse: movement, clicks, right-click menu, strokes, timeout OK.
+Next: M4.1 key combo through a uinput virtual keyboard (key-name parsing + emitted sequence tests).
+Fragile: pointer frozen while trigger held (by design). Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
 
 ## Decisions
 - Rust; deps limited to docs/ARCHITECTURE.md allowed list.
