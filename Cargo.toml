@@ -2,8 +2,7 @@
 name = "strokebind"
 version = "0.0.1"
 edition = "2021"
-# Provisional. Task M0.4 determines the real MSRV with cargo-msrv and CI enforces it.
-rust-version = "1.85"
+rust-version = "1.85.1"
 description = "Mouse-stroke gestures for any Linux Wayland compositor (and X11)"
 license = "MIT OR Apache-2.0"
 readme = "README.md"

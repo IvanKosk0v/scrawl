@@ -7,7 +7,7 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 - [x] M0.1 Crate layout: `src/{main,lib,error,config}.rs`, `src/recognizer/`, `src/device/`, `src/sys/`. Acceptance: builds, check.sh OK.
 - [x] M0.2 CLI skeleton with clap: `record`, `run`, `check-config`, `list-devices` (stubs). Acceptance: `strokebind --help` lists them; test asserts it.
 - [x] M0.3 Config types + TOML parse + validation errors with line info. Acceptance: tests for valid, missing field, unknown stroke string.
-- [ ] M0.4 Repo gates: determine real MSRV with cargo-msrv and set `rust-version`; make `cargo deny check` pass with the deps added so far; make check.sh run it. Acceptance: both succeed locally; CI file unchanged unless needed.
+- [x] M0.4 Repo gates: determine real MSRV with cargo-msrv and set `rust-version`; make `cargo deny check` pass with the deps added so far; make check.sh run it. Acceptance: both succeed locally; CI file unchanged unless needed.
 
 ## M1 Recognizer (pure logic, no I/O)
 - [ ] M1.1 Point stream -> quantized 8-direction segments (min length, jitter filter). Acceptance: tests for straight lines in 8 directions.
