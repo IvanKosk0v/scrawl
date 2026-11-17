@@ -89,7 +89,10 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
         .with_escape(escape.buttons().iter().map(|&b| button_code(b)).collect());
     let path = pick_device(args.device.as_deref())?;
     let mut grab = Grabbed::grab(&path)?;
-    let mut out = VirtualMouse::create(&MouseCaps::from_device(grab.device_mut()))?;
+    let caps = MouseCaps::from_device(grab.device_mut());
+    // Refuse to run without a working escape; returning drops `grab`, releasing the mouse.
+    caps.check_escape(&escape)?;
+    let mut out = VirtualMouse::create(&caps)?;
     eprintln!("grabbed {}; hold {} to exit", path.display(), escape);
     forward(&mut grab, &mut out, engine, |stroke| println!("{stroke}"))?;
     eprintln!("escape chord held, exiting");

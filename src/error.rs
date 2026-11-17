@@ -27,6 +27,19 @@ pub enum Error {
         .0.display()
     )]
     UinputDenied(PathBuf),
+    /// The escape chord uses buttons the grabbed mouse does not have, so the failsafe could never fire.
+    #[error(
+        "escape chord `{chord}` cannot work on {device}: it has no {missing} button; \
+         set `escape` in the config to buttons this mouse has, e.g. `escape = \"left+right\"`"
+    )]
+    EscapeUnavailable {
+        /// The configured chord, e.g. `left+right+middle`.
+        chord: String,
+        /// Device name.
+        device: String,
+        /// Missing buttons joined by `, `.
+        missing: String,
+    },
     /// Installing the SIGINT/SIGTERM failsafe failed.
     #[error("cannot install signal handlers: {0}")]
     Signals(std::io::Error),

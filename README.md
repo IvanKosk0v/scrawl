@@ -10,6 +10,7 @@ strokebind runs the action you bound to it. Plain clicks (including right-click 
 - **Escape chord:** hold all of its buttons at once to exit. The default is `left+right+middle`. Set it in the
   config with `escape = "side+extra"` (at least two distinct buttons from left, right, middle, side and extra).
   Only the mouse is read; strokebind never opens your keyboard.
+  `run` refuses to start if the mouse lacks a chord button, so the escape always works.
 - **`--timeout N`:** exit by itself after N seconds (N >= 1). Use this when trying a new config.
 - **Ctrl-C / SIGTERM, or a crash:** the process exits and the kernel releases the grab.
 

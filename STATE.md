@@ -6,9 +6,9 @@ Branch: m3-grab
 Last session: M3.4 done
 
 ## Handoff
-Done: M3.4 `run --device --config --timeout N` (grab + forward + print strokes); escape chord in Passthrough (config `escape`, default left+right+middle); README Failsafes section.
-Next: all M3 boxes ticked, so run `/milestone` to verify and merge, then M4.1 (key combo via uinput keyboard).
-Fragile: pointer frozen while trigger held; min_step_len guess. Not yet tried on a real mouse; user should test with `run --timeout 20`.
+Done: M3 review MED fixes. `run` rejects an escape chord the mouse can't press (MouseCaps::check_escape); overflow test proves a lost trigger release recovers.
+Next: rerun `/milestone` for M3 (verify, then merge on user yes), then M4.1 (key combo via uinput keyboard).
+Fragile: pointer frozen while trigger held (by design). After SYN_DROPPED, evdev delivers the compensating release only on the next device event. Not yet tried on a real mouse; test with `run --timeout 20`.
 
 ## Decisions
 - Rust; deps limited to docs/ARCHITECTURE.md allowed list.
@@ -27,6 +27,7 @@ Fragile: pointer frozen while trigger held; min_step_len guess. Not yet tried on
 - M3.2: release model = kernel drops grab on fd close; panic (any thread) and SIGINT/SIGTERM exit the process (101/130/143) instead of unwinding. Relies on O_CLOEXEC (tested) so M4.2 children never inherit the grab. signal-hook 0.3 (allowed list). Grab tests are #[ignore] (uinput): `cargo test --test grab -- --ignored`.
 - M3.3: decided at trigger release via recognize(): None = replay all buffered reports verbatim (incl. small jiggle); Some = drop buffered REL_X/Y, trigger, MSC, re-emit the rest (wheel, other buttons). SYN_DROPPED: evdev sync Device re-injects lost state, engine only discards its partial report (no resync API).
 - M3.4 (user chose): escape = mouse-button chord only (never read keyboards); >=2 distinct buttons; checked on every report before passthrough logic, wins even while trigger pending. --timeout >=1 s, thread then exit(0). CLI stub test now uses check-config (run implemented).
+- M3 review: MED1 fixed by refusing to run with an escape chord the device lacks (EscapeUnavailable). MED2: synced evdev Device never yields SYN_DROPPED; it injects compensating key events on the next fetch, proven by `trigger_release_lost_in_overflow_is_recovered`. So no engine change; the engine's SYN_DROPPED branch is defensive only. LOWs deferred.
 - Stroke grammar: 8 tokens U,D,L,R,UL,UR,DL,DR joined by `-` (so `DR` = down-right diagonal, `L-U` = left then up).
 - Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.
 

@@ -8,6 +8,8 @@ use evdev::{
     AttributeSet, Device, InputEvent, InputId, KeyCode, MiscCode, PropType, RelativeAxisCode,
 };
 
+use super::source::button_code;
+use crate::config::{Escape, MouseButton};
 use crate::error::Error;
 
 /// Path of the uinput control node.
@@ -56,6 +58,26 @@ impl MouseCaps {
                 .unwrap_or_default(),
             props: dev.properties().iter().collect(),
         }
+    }
+}
+
+impl MouseCaps {
+    /// Fail unless every button of `escape` exists on this mouse; otherwise the failsafe could never fire.
+    pub fn check_escape(&self, escape: &Escape) -> Result<(), Error> {
+        let missing: Vec<&str> = escape
+            .buttons()
+            .iter()
+            .filter(|&&b| !self.keys.contains(button_code(b)))
+            .map(MouseButton::as_str)
+            .collect();
+        if missing.is_empty() {
+            return Ok(());
+        }
+        Err(Error::EscapeUnavailable {
+            chord: escape.to_string(),
+            device: self.name.clone(),
+            missing: missing.join(", "),
+        })
     }
 }
 

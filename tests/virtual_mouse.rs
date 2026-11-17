@@ -5,7 +5,8 @@ mod common;
 use std::path::PathBuf;
 
 use common::{fake_caps, open_when_ready};
-use evdev::{EventType, RelativeAxisCode};
+use evdev::{EventType, KeyCode, RelativeAxisCode};
+use strokebind::config::Escape;
 use strokebind::device::virtual_mouse::{
     is_virtual_name, virtual_name, VirtualMouse, MAX_NAME_LEN,
 };
@@ -87,4 +88,24 @@ fn uinput_mirrors_fake_caps() {
             && e.value() == 7),
         "{got:?}"
     );
+}
+
+#[test]
+fn escape_check_accepts_chord_the_mouse_has() {
+    let caps = fake_caps("Has All Buttons");
+    assert!(caps.check_escape(&Escape::default()).is_ok());
+}
+
+#[test]
+fn escape_check_rejects_missing_button() {
+    let mut caps = fake_caps("No Middle Button");
+    caps.keys.remove(KeyCode::BTN_MIDDLE);
+    let err = caps
+        .check_escape(&Escape::default())
+        .expect_err("middle is missing");
+    let msg = err.to_string();
+    assert!(matches!(err, Error::EscapeUnavailable { .. }), "{err:?}");
+    assert!(msg.contains("middle"), "{msg}");
+    assert!(msg.contains("left+right+middle"), "{msg}");
+    assert!(msg.contains("escape"), "{msg}");
 }

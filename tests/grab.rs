@@ -294,3 +294,102 @@ fn run_escape_chord_exits_and_releases() {
     assert_eq!(wait_exit(&mut child), Some(0));
     assert!(!is_grabbed(&node));
 }
+
+/// Review fix: `run` refuses to start (and releases the mouse) when the escape chord cannot be pressed.
+#[test]
+#[ignore = "needs writable /dev/uinput"]
+fn run_refuses_unusable_escape_chord() {
+    let mut caps = fake_caps("Run No Middle Test");
+    caps.keys.remove(evdev::KeyCode::BTN_MIDDLE);
+    let mut vm = VirtualMouse::create(&caps).expect("create virtual mouse");
+    let node = vm.dev_node().expect("dev node");
+    drop(open_when_ready(&node));
+    let out = Command::new(env!("CARGO_BIN_EXE_strokebind"))
+        .args(["run", "--device"])
+        .arg(&node)
+        .args(["--timeout", "5"])
+        .output()
+        .expect("run strokebind");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!out.status.success(), "{stderr}");
+    assert!(stderr.contains("escape chord"), "{stderr}");
+    assert!(stderr.contains("middle"), "{stderr}");
+    assert!(!is_grabbed(&node));
+}
+
+/// Review fix: a trigger release lost in a kernel buffer overflow (SYN_DROPPED) must not leave the press
+/// pending forever. evdev's synced Device injects the missing release on the next fetch; the engine resolves.
+#[test]
+#[ignore = "needs writable /dev/uinput"]
+fn trigger_release_lost_in_overflow_is_recovered() {
+    use evdev::{EventType, InputEvent, KeyCode, RelativeAxisCode};
+    use strokebind::config::Trigger;
+    use strokebind::passthrough::{Output, Passthrough};
+    use strokebind::stroke_loop::LoopParams;
+
+    let (mut vm, node) = virtual_source("Overflow Test");
+    let mut dev = open_when_ready(&node);
+    let right = |v| InputEvent::new(EventType::KEY.0, KeyCode::BTN_RIGHT.0, v);
+    let nudge = || InputEvent::new(EventType::RELATIVE.0, RelativeAxisCode::REL_X.0, 1);
+
+    let (pressed_tx, pressed_rx) = mpsc::channel();
+    let (go_tx, go_rx) = mpsc::channel::<()>();
+    let (out_tx, out_rx) = mpsc::channel();
+    std::thread::spawn(move || {
+        let mut engine = Passthrough::new(&LoopParams::new(Trigger::Right, 40));
+        let mut announced = false;
+        while let Ok(events) = dev.fetch_events() {
+            let batch: Vec<_> = events.collect();
+            for e in batch {
+                for o in engine.push(e) {
+                    let _ = out_tx.send(o);
+                }
+            }
+            if !announced {
+                announced = true;
+                let _ = pressed_tx.send(());
+                // Stall while the test floods the buffer, so the overflow is certain.
+                let _ = go_rx.recv();
+            }
+        }
+    });
+
+    vm.emit(&[right(1)]).expect("emit press");
+    pressed_rx
+        .recv_timeout(Duration::from_secs(2))
+        .expect("reader consumed the press");
+    // Release, then flood far past the client buffer before the reader catches up, so the release is dropped.
+    vm.emit(&[right(0)]).expect("emit release");
+    for _ in 0..4000 {
+        vm.emit(&[nudge()]).expect("emit flood");
+    }
+    go_tx.send(()).expect("resume reader");
+
+    let is_release = |o: &Output| match o {
+        Output::Emit(r) => r.iter().any(|e| {
+            e.event_type() == EventType::KEY && e.code() == KeyCode::BTN_RIGHT.0 && e.value() == 0
+        }),
+        _ => false,
+    };
+    let deadline = Instant::now() + Duration::from_secs(3);
+    let mut recovered = false;
+    let mut moves_seen = 0usize;
+    while Instant::now() < deadline && !recovered {
+        // Later motion, like the user moving on, wakes the reader so pending compensation is delivered.
+        vm.emit(&[nudge()]).expect("emit nudge");
+        while let Ok(o) = out_rx.recv_timeout(Duration::from_millis(50)) {
+            if let Output::Emit(r) = &o {
+                moves_seen += r
+                    .iter()
+                    .filter(|e| e.event_type() == EventType::RELATIVE)
+                    .count();
+            }
+            recovered |= is_release(&o) || matches!(o, Output::Stroke(_));
+        }
+    }
+    assert!(recovered, "trigger press stayed pending after the overflow");
+    assert!(
+        moves_seen < 4000,
+        "no overflow happened ({moves_seen} moves arrived), so this test proved nothing"
+    );
+}
