@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use evdev::{Device, EventSummary, KeyCode, RelativeAxisCode, SynchronizationCode};
 
 use super::InputEvent;
-use crate::config::Trigger;
+use crate::config::{MouseButton, Trigger};
 use crate::error::Error;
 
 /// Folds raw evdev events into [`InputEvent`]s, one batch per `SYN_REPORT`.
@@ -80,6 +80,17 @@ pub fn trigger_code(trigger: Trigger) -> KeyCode {
         Trigger::Middle => KeyCode::BTN_MIDDLE,
         Trigger::Side => KeyCode::BTN_SIDE,
         Trigger::Extra => KeyCode::BTN_EXTRA,
+    }
+}
+
+/// The evdev button code of any mouse button (used for the escape chord).
+pub fn button_code(button: MouseButton) -> KeyCode {
+    match button {
+        MouseButton::Left => KeyCode::BTN_LEFT,
+        MouseButton::Right => KeyCode::BTN_RIGHT,
+        MouseButton::Middle => KeyCode::BTN_MIDDLE,
+        MouseButton::Side => KeyCode::BTN_SIDE,
+        MouseButton::Extra => KeyCode::BTN_EXTRA,
     }
 }
 

@@ -12,6 +12,7 @@ type Ev = (u16, u16, i32);
 enum Out {
     Emit(Vec<Ev>),
     Stroke(String),
+    Escape,
 }
 
 fn key(code: KeyCode, v: i32) -> Ev {
@@ -55,6 +56,7 @@ fn push_report(pt: &mut Passthrough, report: &[Ev]) -> Vec<Out> {
                         .collect(),
                 ),
                 Output::Stroke(s) => Out::Stroke(s),
+                Output::Escape => Out::Escape,
             });
         }
     }
@@ -156,4 +158,29 @@ proptest! {
         let expected: Vec<Out> = reports.iter().cloned().map(Out::Emit).collect();
         prop_assert_eq!(feed(&reports), expected);
     }
+}
+
+#[test]
+fn escape_chord_requests_exit_even_while_trigger_is_held() {
+    let mut pt = engine();
+    assert_eq!(
+        push_report(&mut pt, &[key(KeyCode::BTN_LEFT, 1)]),
+        vec![Out::Emit(vec![key(KeyCode::BTN_LEFT, 1)])]
+    );
+    assert_eq!(push_report(&mut pt, &[right(1)]), vec![], "trigger held");
+    assert_eq!(
+        push_report(&mut pt, &[key(KeyCode::BTN_MIDDLE, 1)]),
+        vec![Out::Escape]
+    );
+}
+
+#[test]
+fn escape_chord_needs_all_buttons_down_at_once() {
+    let mut pt = engine().with_escape(vec![KeyCode::BTN_SIDE, KeyCode::BTN_EXTRA]);
+    let side = |v| key(KeyCode::BTN_SIDE, v);
+    let extra = |v| key(KeyCode::BTN_EXTRA, v);
+    for r in [vec![side(1)], vec![side(0)], vec![extra(1)]] {
+        assert_eq!(push_report(&mut pt, &r), vec![Out::Emit(r.clone())]);
+    }
+    assert_eq!(push_report(&mut pt, &[side(1)]), vec![Out::Escape]);
 }

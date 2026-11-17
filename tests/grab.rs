@@ -186,6 +186,7 @@ fn forward_end_to_end() {
     use strokebind::config::Trigger;
     use strokebind::device::forward::forward;
     use strokebind::device::virtual_mouse::MouseCaps;
+    use strokebind::passthrough::Passthrough;
     use strokebind::stroke_loop::LoopParams;
 
     let (mut src_vm, node) = virtual_source("Forward Source Test");
@@ -205,8 +206,8 @@ fn forward_end_to_end() {
     });
     let (stroke_tx, stroke_rx) = mpsc::channel();
     let fwd = std::thread::spawn(move || {
-        let params = LoopParams::new(Trigger::Right, 40);
-        forward(&mut grab, &mut out, &params, |s| {
+        let engine = Passthrough::new(&LoopParams::new(Trigger::Right, 40));
+        forward(&mut grab, &mut out, engine, |s| {
             let _ = stroke_tx.send(s);
         })
     });
@@ -239,4 +240,57 @@ fn forward_end_to_end() {
     drop(src_vm);
     let res = fwd.join().expect("forward thread");
     assert!(res.is_err(), "unplugging the source ends the loop");
+}
+
+/// Start `strokebind run` on `node`; returns once it reports the grab on stderr.
+fn spawn_run(node: &Path, timeout_s: &str) -> Child {
+    let mut child = Command::new(env!("CARGO_BIN_EXE_strokebind"))
+        .args(["run", "--device"])
+        .arg(node)
+        .args(["--timeout", timeout_s])
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("spawn strokebind run");
+    let stderr = child.stderr.take().expect("run stderr");
+    let (tx, rx) = mpsc::channel();
+    std::thread::spawn(move || {
+        for line in BufReader::new(stderr).lines().map_while(Result::ok) {
+            if line.contains("grabbed") {
+                let _ = tx.send(());
+            }
+        }
+    });
+    if rx.recv_timeout(Duration::from_secs(5)).is_err() {
+        let _ = child.kill();
+        panic!("run never reported the grab");
+    }
+    child
+}
+
+/// M3.4: `run --timeout 1` exits by itself and releases the grab.
+#[test]
+#[ignore = "needs writable /dev/uinput"]
+fn run_timeout_exits_and_releases() {
+    let (_vm, node) = virtual_source("Run Timeout Test");
+    let mut child = spawn_run(&node, "1");
+    assert!(is_grabbed(&node));
+    assert_eq!(wait_exit(&mut child), Some(0));
+    assert!(!is_grabbed(&node));
+}
+
+/// M3.4: holding the default escape chord (left+right+middle) exits `run` and releases the grab.
+#[test]
+#[ignore = "needs writable /dev/uinput"]
+fn run_escape_chord_exits_and_releases() {
+    use evdev::{EventType, InputEvent, KeyCode};
+    let (mut vm, node) = virtual_source("Run Escape Test");
+    // Long timeout only as a backstop; the chord must end the run well before it.
+    let mut child = spawn_run(&node, "30");
+    for code in [KeyCode::BTN_LEFT, KeyCode::BTN_RIGHT, KeyCode::BTN_MIDDLE] {
+        vm.emit(&[InputEvent::new(EventType::KEY.0, code.0, 1)])
+            .expect("emit press");
+    }
+    assert_eq!(wait_exit(&mut child), Some(0));
+    assert!(!is_grabbed(&node));
 }

@@ -5,7 +5,8 @@
 
 use evdev::{EventSummary, EventType, InputEvent, KeyCode, RelativeAxisCode, SynchronizationCode};
 
-use crate::device::source::trigger_code;
+use crate::config::Escape;
+use crate::device::source::{button_code, trigger_code};
 use crate::recognizer::recognize;
 use crate::recognizer::segment::Point;
 use crate::stroke_loop::LoopParams;
@@ -17,6 +18,8 @@ pub enum Output {
     Emit(Vec<InputEvent>),
     /// A stroke was recognized.
     Stroke(String),
+    /// The escape chord is held: the caller must stop forwarding and exit.
+    Escape,
 }
 
 /// A trigger press waiting for its release.
@@ -33,17 +36,45 @@ pub struct Passthrough {
     trigger: KeyCode,
     report: Vec<InputEvent>,
     pending: Option<Pending>,
+    escape: Vec<KeyCode>,
+    held: Vec<KeyCode>,
 }
 
 impl Passthrough {
-    /// New engine for the trigger and thresholds in `params`.
+    /// New engine for the trigger and thresholds in `params`, with the default escape chord.
     pub fn new(params: &LoopParams) -> Self {
         Passthrough {
             params: *params,
             trigger: trigger_code(params.trigger),
             report: Vec::new(),
             pending: None,
+            escape: Escape::default()
+                .buttons()
+                .iter()
+                .map(|&b| button_code(b))
+                .collect(),
+            held: Vec::new(),
         }
+    }
+
+    /// Replace the escape chord: holding all of `buttons` at once yields [`Output::Escape`].
+    pub fn with_escape(mut self, buttons: Vec<KeyCode>) -> Self {
+        self.escape = buttons;
+        self
+    }
+
+    /// Track button state; true once every escape button is held.
+    fn escape_held(&mut self, report: &[InputEvent]) -> bool {
+        for e in report {
+            if let EventSummary::Key(_, code, v) = e.destructure() {
+                match v {
+                    1 if !self.held.contains(&code) => self.held.push(code),
+                    0 => self.held.retain(|&c| c != code),
+                    _ => {}
+                }
+            }
+        }
+        !self.escape.is_empty() && self.escape.iter().all(|c| self.held.contains(c))
     }
 
     /// Feed one raw event; outputs are produced only when a `SYN_REPORT` completes a report.
@@ -77,6 +108,9 @@ impl Passthrough {
     fn on_report(&mut self, report: Vec<InputEvent>) -> Vec<Output> {
         if report.is_empty() {
             return Vec::new();
+        }
+        if self.escape_held(&report) {
+            return vec![Output::Escape];
         }
         let trigger = self.trigger_value(&report);
         let Some(pending) = self.pending.as_mut() else {

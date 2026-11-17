@@ -24,7 +24,7 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 - [x] M3.1 uinput virtual mouse mirroring the source capabilities. Acceptance: tests on fake source; manual check.
 - [x] M3.2 Exclusive grab with guaranteed release: Drop, panic hook, SIGINT/SIGTERM. Acceptance: one test per release path.
 - [x] M3.3 Click passthrough: press held until stroke-vs-click is decided; plain click replayed unchanged. Acceptance: tests for click, stroke, press-move-return-click.
-- [ ] M3.4 Failsafe: `--timeout N` auto-exit and a configurable escape key combo. Acceptance: documented and tested.
+- [x] M3.4 Failsafe: `--timeout N` auto-exit and a configurable escape key combo. Acceptance: documented and tested.
 
 ## M4 Actions + config
 - [ ] M4.1 Action: key combo through uinput virtual keyboard. Acceptance: key-name parsing and emitted event sequence tests.

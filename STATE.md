@@ -1,14 +1,14 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
 Current milestone: M3
-Current task: M3.4
+Current task: M3 close (`/milestone`), then M4.1
 Branch: m3-grab
-Last session: M3.3 done
+Last session: M3.4 done
 
 ## Handoff
-Done: M3.3 `passthrough::Passthrough` (pure raw-report engine) + `device::forward::forward` (Grabbed -> engine -> VirtualMouse). Not wired to CLI yet.
-Next: M3.4 `--timeout N` + escape combo; then `run` can call install_failsafes, grab, forward safely.
-Fragile: pointer is frozen while the trigger is held (motion buffered); min_step_len guess. uinput node needs udev a moment after creation (tests retry open).
+Done: M3.4 `run --device --config --timeout N` (grab + forward + print strokes); escape chord in Passthrough (config `escape`, default left+right+middle); README Failsafes section.
+Next: all M3 boxes ticked, so run `/milestone` to verify and merge, then M4.1 (key combo via uinput keyboard).
+Fragile: pointer frozen while trigger held; min_step_len guess. Not yet tried on a real mouse; user should test with `run --timeout 20`.
 
 ## Decisions
 - Rust; deps limited to docs/ARCHITECTURE.md allowed list.
@@ -26,6 +26,7 @@ Fragile: pointer is frozen while the trigger is held (motion buffered); min_step
 - M3.1: abs axes not mirrored; virtual name `strokebind: <src>` cut to 78 bytes (evdev build() asserts <80); real-uinput test is #[ignore], run with `cargo test --test virtual_mouse -- --ignored`.
 - M3.2: release model = kernel drops grab on fd close; panic (any thread) and SIGINT/SIGTERM exit the process (101/130/143) instead of unwinding. Relies on O_CLOEXEC (tested) so M4.2 children never inherit the grab. signal-hook 0.3 (allowed list). Grab tests are #[ignore] (uinput): `cargo test --test grab -- --ignored`.
 - M3.3: decided at trigger release via recognize(): None = replay all buffered reports verbatim (incl. small jiggle); Some = drop buffered REL_X/Y, trigger, MSC, re-emit the rest (wheel, other buttons). SYN_DROPPED: evdev sync Device re-injects lost state, engine only discards its partial report (no resync API).
+- M3.4 (user chose): escape = mouse-button chord only (never read keyboards); >=2 distinct buttons; checked on every report before passthrough logic, wins even while trigger pending. --timeout >=1 s, thread then exit(0). CLI stub test now uses check-config (run implemented).
 - Stroke grammar: 8 tokens U,D,L,R,UL,UR,DL,DR joined by `-` (so `DR` = down-right diagonal, `L-U` = left then up).
 - Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.
 

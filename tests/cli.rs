@@ -18,7 +18,7 @@ fn help_lists_subcommands() {
 #[test]
 fn stub_subcommand_reports_not_implemented() {
     let out = Command::new(env!("CARGO_BIN_EXE_strokebind"))
-        .arg("run")
+        .arg("check-config")
         .output()
         .expect("run strokebind");
     assert!(!out.status.success());
@@ -39,4 +39,27 @@ fn record_help_lists_options() {
             "record --help is missing `{opt}`:\n{text}"
         );
     }
+}
+
+#[test]
+fn run_help_lists_options() {
+    let out = Command::new(env!("CARGO_BIN_EXE_strokebind"))
+        .args(["run", "--help"])
+        .output()
+        .expect("run strokebind");
+    assert!(out.status.success());
+    let text = String::from_utf8_lossy(&out.stdout);
+    for opt in ["--device", "--config", "--timeout"] {
+        assert!(text.contains(opt), "run --help is missing `{opt}`:\n{text}");
+    }
+}
+
+#[test]
+fn run_rejects_zero_timeout() {
+    let out = Command::new(env!("CARGO_BIN_EXE_strokebind"))
+        .args(["run", "--timeout", "0"])
+        .output()
+        .expect("run strokebind");
+    assert!(!out.status.success());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("--timeout"));
 }
