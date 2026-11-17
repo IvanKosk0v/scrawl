@@ -23,7 +23,7 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 ## M3 Grab + passthrough (highest risk; use plan mode; strongest model advised)
 - [x] M3.1 uinput virtual mouse mirroring the source capabilities. Acceptance: tests on fake source; manual check.
 - [x] M3.2 Exclusive grab with guaranteed release: Drop, panic hook, SIGINT/SIGTERM. Acceptance: one test per release path.
-- [x] M3.3 Click passthrough: press held until stroke-vs-click is decided; plain click replayed unchanged. Acceptance: tests for click, stroke, press-move-return-click.
+- [x] M3.3 Click passthrough: press held until stroke-vs-click is decided; plain click replayed unchanged. Acceptance: tests for click, stroke, press-move-return-click. (Since P3 this is the `freeze_pointer = true` mode; live mode is M4.6.)
 - [x] M3.4 Failsafe: `--timeout N` auto-exit and a configurable escape key combo. Acceptance: documented and tested.
 
 ## M4 Actions + config
@@ -32,6 +32,7 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 - [ ] M4.3 Bindings from config, per-device profiles, hot reload. Acceptance: reload test.
 - [ ] M4.4 `check-config` with clear errors. Acceptance: golden-output tests.
 - [ ] M4.5 `feedback = "notify"` config: after each release show the recognized stroke (or "no match") via `notify-send`, spawned through the M4.2 run-command path (no new deps). Default off. Acceptance: config parse test + test of the spawned argv on a fake runner.
+- [ ] M4.6 `freeze_pointer` (default false) + `click_slop_px` (default 6, must be < min_stroke_px). false: REL_X/Y forwarded live while the trigger is held, only the press withheld; at release, by max distance from the press point: <= slop = click (press+release, MSC kept, at release position), recognized stroke = action and no click, otherwise swallowed. true: M3.3 behavior unchanged, slop unused. Acceptance: config validation tests; live-mode tests for click within slop, stroke, swallow band, press-move-return beyond slop; M3.3 tests still pass with true.
 
 ## M5 Per-app profiles (adapters; global fallback always works)
 - [ ] M5.1 Adapter trait `active_window() -> Option<AppId>`. Acceptance: mock-based tests.
