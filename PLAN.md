@@ -31,6 +31,7 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 - [ ] M4.2 Action: run command (no shell by default, sanitized env). Acceptance: tests.
 - [ ] M4.3 Bindings from config, per-device profiles, hot reload. Acceptance: reload test.
 - [ ] M4.4 `check-config` with clear errors. Acceptance: golden-output tests.
+- [ ] M4.5 `feedback = "notify"` config: after each release show the recognized stroke (or "no match") via `notify-send`, spawned through the M4.2 run-command path (no new deps). Default off. Acceptance: config parse test + test of the spawned argv on a fake runner.
 
 ## M5 Per-app profiles (adapters; global fallback always works)
 - [ ] M5.1 Adapter trait `active_window() -> Option<AppId>`. Acceptance: mock-based tests.
