@@ -1,14 +1,14 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
-Current milestone: M0
-Current task: none (M0 complete, run /milestone)
-Branch: m0-foundation
-Last session: M0.4 done
+Current milestone: M1
+Current task: M1.1
+Branch: (create `m1-recognizer` from main on first /next)
+Last session: M0 closed
 
 ## Handoff
-Done: M0.4 MSRV measured 1.85.1 (cargo msrv find), cargo deny passes and runs in check.sh, CI unchanged.
-Next: /milestone to close M0, then M1.1.
-Fragile: deny.toml has unused license allowances (warnings only); MSRV must be re-measured when deps are added.
+Done: M0 Foundation merged to main (layout, CLI stubs, config parse, MSRV 1.85.1, deny).
+Next: M1.1 point stream -> 8-direction segments (pure logic, proptest).
+Fragile: Stroke type lives in config.rs; M1.2 may need it in recognizer. Push + CI not yet run.
 
 ## Decisions
 - Rust; deps limited to docs/ARCHITECTURE.md allowed list.
