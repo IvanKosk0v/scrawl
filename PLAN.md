@@ -10,7 +10,7 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 - [x] M0.4 Repo gates: determine real MSRV with cargo-msrv and set `rust-version`; make `cargo deny check` pass with the deps added so far; make check.sh run it. Acceptance: both succeed locally; CI file unchanged unless needed.
 
 ## M1 Recognizer (pure logic, no I/O)
-- [ ] M1.1 Point stream -> quantized 8-direction segments (min length, jitter filter). Acceptance: tests for straight lines in 8 directions.
+- [x] M1.1 Point stream -> quantized 8-direction segments (min length, jitter filter). Acceptance: tests for straight lines in 8 directions.
 - [ ] M1.2 Segments -> stroke string like `R`, `DR`, `L-U` (merge repeats, drop tiny segments). Acceptance: tests for L-shape, zigzag noise, tiny wiggle = no stroke.
 - [ ] M1.3 Matcher: stroke string -> binding, configurable tolerance. Acceptance: tests incl. ambiguous cases.
 - [ ] M1.4 Property tests (proptest): never panics on arbitrary points; same stroke under uniform scaling and small jitter; empty/one-point input = no stroke. Acceptance: proptests pass with >= 256 cases.
