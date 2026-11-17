@@ -1,5 +1,9 @@
 //! evdev enumeration (read-only; nothing here grabs a device).
 
+pub mod event;
+
+pub use event::InputEvent;
+
 use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};

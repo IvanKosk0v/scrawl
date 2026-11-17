@@ -1,14 +1,14 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
 Current milestone: M2
-Current task: M2.2
+Current task: M2.3
 Branch: m2-devices
-Last session: M2.1 done
+Last session: M2.2 done
 
 ## Handoff
-Done: M2.1 device::{is_mouse,list_mice,list_mice_in}, Error::{PermissionDenied,Io}, list-devices wired; evdev + tempfile added.
-Next: M2.2 event loop with fake event source (trigger button + REL_X/Y -> points -> recognizer).
-Fragile: list_mice_in has no success-path test without hardware; user should run `strokebind list-devices` after joining `input` group. Push + CI not yet run.
+Done: M2.2 device::InputEvent + stroke_loop::{run_events, LoopParams} driven by any Iterator<Item=Result<InputEvent>>.
+Next: M2.3 `record`: real evdev source (map BTN_* + REL_X/Y per SYN report) printing strokes; fake-source test; user verifies on hardware.
+Fragile: no real evdev event iterator yet (needs reading with NO grab); min_step_len = min_stroke_px/4 is a guess to revisit.
 
 ## Decisions
 - Rust; deps limited to docs/ARCHITECTURE.md allowed list.
@@ -21,6 +21,7 @@ Fragile: list_mice_in has no success-path test without hardware; user should run
 - M1.3: tolerance = max total 45-degree steps (circular) across equal-length strokes; ties for best distance (incl. duplicate bindings) = Ambiguous, no action.
 - M1.4: scaling/jitter proptests use exact-grid paths (20px steps, jitter +-2) so expectations are deterministic.
 - M2.1: opens nodes with evdev Device::open (read-only, no grab); unreadable-only => PermissionDenied error with input-group/udev hint; other open failures skipped. Removed device::MODULE placeholder; layout test now references list_mice_in.
+- M2.2: no EventSource trait; the loop takes any iterator of Result<InputEvent>. Unfinished stroke at end of stream is discarded; LoopParams::from_config: min_run = min_stroke_px, min_step = min_stroke_px/4.
 - Stroke grammar: 8 tokens U,D,L,R,UL,UR,DL,DR joined by `-` (so `DR` = down-right diagonal, `L-U` = left then up).
 - Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.
 
