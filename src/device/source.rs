@@ -73,6 +73,16 @@ fn trigger_for(code: KeyCode) -> Option<Trigger> {
     }
 }
 
+/// The evdev button code of a trigger (inverse of the mapping used by [`ReportMapper`]).
+pub fn trigger_code(trigger: Trigger) -> KeyCode {
+    match trigger {
+        Trigger::Right => KeyCode::BTN_RIGHT,
+        Trigger::Middle => KeyCode::BTN_MIDDLE,
+        Trigger::Side => KeyCode::BTN_SIDE,
+        Trigger::Extra => KeyCode::BTN_EXTRA,
+    }
+}
+
 /// Open an evdev node strictly read-only (`Device::open` would try read-write first).
 pub fn open_readonly(path: &Path) -> std::io::Result<Device> {
     let file = std::fs::OpenOptions::new().read(true).open(path)?;

@@ -49,6 +49,11 @@ impl Grabbed {
         })
     }
 
+    /// Path of the grabbed node.
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
     /// The grabbed device, for reading its events.
     pub fn device_mut(&mut self) -> &mut Device {
         &mut self.dev

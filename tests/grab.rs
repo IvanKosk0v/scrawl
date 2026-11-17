@@ -177,3 +177,66 @@ fn grab_fd_is_cloexec() {
         "grabbed fd would leak into child processes"
     );
 }
+
+/// M3.3 end to end: grabbed virtual source A -> forward -> mirrored virtual mouse B.
+#[test]
+#[ignore = "needs writable /dev/uinput"]
+fn forward_end_to_end() {
+    use evdev::{EventType, InputEvent, KeyCode, RelativeAxisCode};
+    use strokebind::config::Trigger;
+    use strokebind::device::forward::forward;
+    use strokebind::device::virtual_mouse::MouseCaps;
+    use strokebind::stroke_loop::LoopParams;
+
+    let (mut src_vm, node) = virtual_source("Forward Source Test");
+    let mut grab = Grabbed::grab(&node).expect("grab");
+    let mut caps = MouseCaps::from_device(grab.device_mut());
+    caps.name = "Forward Out Test".into();
+    let mut out = VirtualMouse::create(&caps).expect("create out");
+    let mut reader = open_when_ready(&out.dev_node().expect("out node"));
+
+    let (key_tx, key_rx) = mpsc::channel();
+    std::thread::spawn(move || {
+        while let Ok(events) = reader.fetch_events() {
+            for e in events.filter(|e| e.event_type() == EventType::KEY) {
+                let _ = key_tx.send((e.code(), e.value()));
+            }
+        }
+    });
+    let (stroke_tx, stroke_rx) = mpsc::channel();
+    let fwd = std::thread::spawn(move || {
+        let params = LoopParams::new(Trigger::Right, 40);
+        forward(&mut grab, &mut out, &params, |s| {
+            let _ = stroke_tx.send(s);
+        })
+    });
+
+    let right = |v| InputEvent::new(EventType::KEY.0, KeyCode::BTN_RIGHT.0, v);
+    let wait = Duration::from_secs(2);
+    src_vm.emit(&[right(1)]).expect("emit press");
+    src_vm.emit(&[right(0)]).expect("emit release");
+    assert_eq!(
+        key_rx.recv_timeout(wait).ok(),
+        Some((KeyCode::BTN_RIGHT.0, 1))
+    );
+    assert_eq!(
+        key_rx.recv_timeout(wait).ok(),
+        Some((KeyCode::BTN_RIGHT.0, 0))
+    );
+
+    src_vm.emit(&[right(1)]).expect("emit press");
+    for _ in 0..5 {
+        let mv = InputEvent::new(EventType::RELATIVE.0, RelativeAxisCode::REL_X.0, 20);
+        src_vm.emit(&[mv]).expect("emit move");
+    }
+    src_vm.emit(&[right(0)]).expect("emit release");
+    assert_eq!(stroke_rx.recv_timeout(wait).ok().as_deref(), Some("R"));
+    assert!(
+        key_rx.recv_timeout(Duration::from_millis(300)).is_err(),
+        "stroke buttons must not reach the virtual mouse"
+    );
+
+    drop(src_vm);
+    let res = fwd.join().expect("forward thread");
+    assert!(res.is_err(), "unplugging the source ends the loop");
+}

@@ -23,7 +23,7 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 ## M3 Grab + passthrough (highest risk; use plan mode; strongest model advised)
 - [x] M3.1 uinput virtual mouse mirroring the source capabilities. Acceptance: tests on fake source; manual check.
 - [x] M3.2 Exclusive grab with guaranteed release: Drop, panic hook, SIGINT/SIGTERM. Acceptance: one test per release path.
-- [ ] M3.3 Click passthrough: press held until stroke-vs-click is decided; plain click replayed unchanged. Acceptance: tests for click, stroke, press-move-return-click.
+- [x] M3.3 Click passthrough: press held until stroke-vs-click is decided; plain click replayed unchanged. Acceptance: tests for click, stroke, press-move-return-click.
 - [ ] M3.4 Failsafe: `--timeout N` auto-exit and a configurable escape key combo. Acceptance: documented and tested.
 
 ## M4 Actions + config

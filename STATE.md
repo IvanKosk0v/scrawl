@@ -1,14 +1,14 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
 Current milestone: M3
-Current task: M3.3
+Current task: M3.4
 Branch: m3-grab
-Last session: M3.2 done
+Last session: M3.3 done
 
 ## Handoff
-Done: M3.2 `device::grab` (Grabbed: grab/device_mut, ungrab on Drop; install_failsafes: panic hook exit 101, signal thread exit 128+sig). tests/grab.rs child-process tests.
-Next: M3.3 click passthrough (hold press until stroke-vs-click decided; replay plain click). Wire Grabbed + VirtualMouse.
-Fragile: SYN_DROPPED can drop a buffered trigger release, so resync before grab. uinput node needs udev for a moment after creation (tests retry open).
+Done: M3.3 `passthrough::Passthrough` (pure raw-report engine) + `device::forward::forward` (Grabbed -> engine -> VirtualMouse). Not wired to CLI yet.
+Next: M3.4 `--timeout N` + escape combo; then `run` can call install_failsafes, grab, forward safely.
+Fragile: pointer is frozen while the trigger is held (motion buffered); min_step_len guess. uinput node needs udev a moment after creation (tests retry open).
 
 ## Decisions
 - Rust; deps limited to docs/ARCHITECTURE.md allowed list.
@@ -25,6 +25,7 @@ Fragile: SYN_DROPPED can drop a buffered trigger release, so resync before grab.
 - M2.3: ReportMapper folds each SYN_REPORT into one Motion (first) then button changes; ignores autorepeat and non-trigger buttons. record defaults: first mouse, Right trigger, 40px.
 - M3.1: abs axes not mirrored; virtual name `strokebind: <src>` cut to 78 bytes (evdev build() asserts <80); real-uinput test is #[ignore], run with `cargo test --test virtual_mouse -- --ignored`.
 - M3.2: release model = kernel drops grab on fd close; panic (any thread) and SIGINT/SIGTERM exit the process (101/130/143) instead of unwinding. Relies on O_CLOEXEC (tested) so M4.2 children never inherit the grab. signal-hook 0.3 (allowed list). Grab tests are #[ignore] (uinput): `cargo test --test grab -- --ignored`.
+- M3.3: decided at trigger release via recognize(): None = replay all buffered reports verbatim (incl. small jiggle); Some = drop buffered REL_X/Y, trigger, MSC, re-emit the rest (wheel, other buttons). SYN_DROPPED: evdev sync Device re-injects lost state, engine only discards its partial report (no resync API).
 - Stroke grammar: 8 tokens U,D,L,R,UL,UR,DL,DR joined by `-` (so `DR` = down-right diagonal, `L-U` = left then up).
 - Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.
 
