@@ -67,6 +67,7 @@ pub enum Action {
 
 /// One stroke-to-action binding.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Binding {
     /// Stroke that triggers the action.
     pub stroke: Stroke,
@@ -76,6 +77,7 @@ pub struct Binding {
 
 /// Parsed user configuration.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Config {
     /// Button held while drawing a stroke.
     pub trigger: Trigger,

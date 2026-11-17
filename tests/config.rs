@@ -76,3 +76,26 @@ fn syntax_error_reports_line() {
     let (line, _) = config_error("trigger = \"right\"\nmin_stroke_px = = 3\n");
     assert_eq!(line, Some(2));
 }
+
+#[test]
+fn typo_in_key_is_rejected_with_line() {
+    let (line, msg) = config_error("trigger = \"right\"\nmin_strok_px = 10\n");
+    assert_eq!(line, Some(2));
+    assert!(msg.contains("min_strok_px"), "message: {msg}");
+}
+
+#[test]
+fn typo_in_table_name_is_rejected_with_line() {
+    let src = "trigger = \"right\"\n\n[[bindings]]\nstroke = \"L\"\naction = { key = \"a\" }\n";
+    let (line, msg) = config_error(src);
+    assert_eq!(line, Some(3));
+    assert!(msg.contains("bindings"), "message: {msg}");
+}
+
+#[test]
+fn typo_in_binding_key_is_rejected() {
+    let src = "trigger = \"right\"\n\n[[binding]]\nstroke = \"L\"\naction = { key = \"a\" }\nstrok = \"R\"\n";
+    let (line, msg) = config_error(src);
+    assert_eq!(line, Some(6));
+    assert!(msg.contains("strok"), "message: {msg}");
+}
