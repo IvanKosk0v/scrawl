@@ -27,7 +27,7 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 - [x] M3.4 Failsafe: `--timeout N` auto-exit and a configurable escape key combo. Acceptance: documented and tested.
 
 ## M4 Actions + config
-- [ ] M4.1 Action: key combo through uinput virtual keyboard. Acceptance: key-name parsing and emitted event sequence tests.
+- [x] M4.1 Action: key combo through uinput virtual keyboard. Acceptance: key-name parsing and emitted event sequence tests.
 - [ ] M4.2 Action: run command (no shell by default, sanitized env). Acceptance: tests.
 - [ ] M4.3 Bindings from config, per-device profiles, hot reload. Acceptance: reload test.
 - [ ] M4.4 `check-config` with clear errors. Acceptance: golden-output tests.

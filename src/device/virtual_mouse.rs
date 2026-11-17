@@ -103,7 +103,8 @@ pub struct VirtualMouse {
     dev: VirtualDevice,
 }
 
-fn uinput_err(source: std::io::Error) -> Error {
+/// Map a uinput I/O error, turning permission problems into [`Error::UinputDenied`].
+pub(crate) fn uinput_err(source: std::io::Error) -> Error {
     let path = PathBuf::from(UINPUT_PATH);
     if source.kind() == ErrorKind::PermissionDenied {
         Error::UinputDenied(path)
@@ -136,15 +137,19 @@ impl VirtualMouse {
 
     /// The `/dev/input/event*` node of this virtual mouse.
     pub fn dev_node(&mut self) -> Result<PathBuf, Error> {
-        let not_found = || Error::Io {
-            path: Path::new(UINPUT_PATH).to_path_buf(),
-            source: std::io::Error::new(ErrorKind::NotFound, "virtual mouse has no event node"),
-        };
-        self.dev
-            .enumerate_dev_nodes_blocking()
-            .map_err(uinput_err)?
-            .next()
-            .ok_or_else(not_found)?
-            .map_err(uinput_err)
+        first_node(&mut self.dev)
     }
+}
+
+/// The first `/dev/input/event*` node of a uinput device.
+pub(crate) fn first_node(dev: &mut VirtualDevice) -> Result<PathBuf, Error> {
+    let not_found = || Error::Io {
+        path: Path::new(UINPUT_PATH).to_path_buf(),
+        source: std::io::Error::new(ErrorKind::NotFound, "virtual device has no event node"),
+    };
+    dev.enumerate_dev_nodes_blocking()
+        .map_err(uinput_err)?
+        .next()
+        .ok_or_else(not_found)?
+        .map_err(uinput_err)
 }

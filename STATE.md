@@ -1,14 +1,14 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
 Current milestone: M4
-Current task: M4.1
-Branch: main (create m4-actions from main before M4.1)
-Last session: M3 closed
+Current task: M4.2
+Branch: m4-actions
+Last session: M4.1 done
 
 ## Handoff
-Done: M3 merged to main (not pushed). User verified `run --timeout 20` on a real mouse: movement, clicks, right-click menu, strokes, timeout OK.
-Next: M4.1 key combo through a uinput virtual keyboard (key-name parsing + emitted sequence tests).
-Fragile: pointer frozen while trigger held (by design). Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
+Done: M4.1 `actions::key::KeyCombo` (parse, reports(), keyboard_keys()) + `device::virtual_keyboard::VirtualKeyboard` (create/press/dev_node). Not wired to run yet (bindings = M4.3).
+Next: M4.2 run-command action (no shell by default, sanitized env).
+Fragile: frozen pointer until M4.6 (live motion default). Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
 
 ## Decisions
 - Rust; deps limited to docs/ARCHITECTURE.md allowed list.
@@ -30,6 +30,7 @@ Fragile: pointer frozen while trigger held (by design). Compensating release aft
 - M3 review: MED1 fixed by refusing to run with an escape chord the device lacks (EscapeUnavailable). MED2: synced evdev Device never yields SYN_DROPPED; it injects compensating key events on the next fetch, proven by `trigger_release_lost_in_overflow_is_recovered`. So no engine change; the engine's SYN_DROPPED branch is defensive only. LOWs deferred.
 - approved P2: `feedback = "notify"` added as M4.5 (notify-send via M4.2 path, no new deps).
 - approved P3: M4.6 live-motion default (`freeze_pointer = false`, `click_slop_px = 6`, between-band swallowed); M3.3 now = freeze_pointer=true mode. Caveat: focus-follows-mouse may shift focus during live strokes.
+- M4.1: key names = aliases (ctrl/control, shift, alt, altgr, super/meta/win/logo, return, escape, del, ins, pgup, pgdn, period, print) or any evdev KEY_* name without prefix, case-insensitive. Only the last key may be a non-modifier; no duplicates; BTN_* rejected. One key event per report; modifiers released in reverse. Virtual keyboard declares 1..=0xff and 0x160..=0x2bf. Config `Action::Key` stays a String until M4.3/M4.4 validate it. The uinput test types shift+F24.
 - Stroke grammar: 8 tokens U,D,L,R,UL,UR,DL,DR joined by `-` (so `DR` = down-right diagonal, `L-U` = left then up).
 - Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.
 
