@@ -1,14 +1,14 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
-Current milestone: M2
-Current task: none (M2 tasks done; awaiting hardware check, then /milestone)
-Branch: m2-devices
-Last session: M2.3 done
+Current milestone: M3
+Current task: M3.1
+Branch: main (create m3-grab from main before M3.1)
+Last session: M2 closed
 
 ## Handoff
-Done: M2.3 device::source::{ReportMapper,EvdevSource} (read-only, no grab) + `record [--device] [--config]`.
-Next: user runs `strokebind record` on real mouse to verify; then /milestone for M2.
-Fragile: min_step_len = min_stroke_px/4 is a guess to revisit; record without --config uses right button, 40px.
+Done: M2 merged (list-devices, event loop, read-only record verified by user).
+Next: M3.1 uinput virtual mouse mirroring source capabilities (plan mode advised; highest risk).
+Fragile: SYN_DROPPED can drop a buffered trigger release; resync via get_key_state or reset loop state before grab (M3). min_step_len guess.
 
 ## Decisions
 - Rust; deps limited to docs/ARCHITECTURE.md allowed list.
