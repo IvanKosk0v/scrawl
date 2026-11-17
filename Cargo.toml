@@ -11,6 +11,7 @@ keywords = ["wayland", "mouse", "gestures", "evdev", "linux"]
 categories = ["command-line-utilities", "os::linux-apis"]
 
 [dependencies]
+thiserror = "2"
 
 [lints.rust]
 unsafe_code = "deny"      # only src/sys/ may `#![allow(unsafe_code)]`, each use documented
