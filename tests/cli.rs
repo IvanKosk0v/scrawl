@@ -18,9 +18,25 @@ fn help_lists_subcommands() {
 #[test]
 fn stub_subcommand_reports_not_implemented() {
     let out = Command::new(env!("CARGO_BIN_EXE_strokebind"))
-        .arg("list-devices")
+        .arg("run")
         .output()
         .expect("run strokebind");
     assert!(!out.status.success());
     assert!(String::from_utf8_lossy(&out.stderr).contains("not implemented"));
+}
+
+#[test]
+fn record_help_lists_options() {
+    let out = Command::new(env!("CARGO_BIN_EXE_strokebind"))
+        .args(["record", "--help"])
+        .output()
+        .expect("run strokebind");
+    assert!(out.status.success());
+    let text = String::from_utf8_lossy(&out.stdout);
+    for opt in ["--device", "--config"] {
+        assert!(
+            text.contains(opt),
+            "record --help is missing `{opt}`:\n{text}"
+        );
+    }
 }
