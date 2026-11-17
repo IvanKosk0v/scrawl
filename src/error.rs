@@ -40,6 +40,17 @@ pub enum Error {
         /// Missing buttons joined by `, `.
         missing: String,
     },
+    /// A run-command action has no program.
+    #[error("run action needs a program, e.g. run = [\"notify-send\", \"hello\"]")]
+    EmptyCommand,
+    /// A run-command action could not be started.
+    #[error("cannot run `{program}`: {source}")]
+    Spawn {
+        /// The program (argv[0]).
+        program: String,
+        /// Underlying error.
+        source: std::io::Error,
+    },
     /// Installing the SIGINT/SIGTERM failsafe failed.
     #[error("cannot install signal handlers: {0}")]
     Signals(std::io::Error),

@@ -1,14 +1,14 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
 Current milestone: M4
-Current task: M4.2
+Current task: M4.3
 Branch: m4-actions
-Last session: M4.1 done
+Last session: M4.2 done
 
 ## Handoff
-Done: M4.1 `actions::key::KeyCombo` (parse, reports(), keyboard_keys()) + `device::virtual_keyboard::VirtualKeyboard` (create/press/dev_node). Not wired to run yet (bindings = M4.3).
-Next: M4.2 run-command action (no shell by default, sanitized env).
-Fragile: frozen pointer until M4.6 (live motion default). Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
+Done: M4.2 `actions::command` (sanitized_env allowlist, build_command, spawn_detached with reaper thread, current_env). Error::EmptyCommand/Spawn. Not wired to run yet.
+Next: M4.3 bindings from config (validate key combos + argv at load), per-device profiles, hot reload (notify dep allowed); wire actions into `run`.
+Fragile: frozen pointer until M4.6. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
 
 ## Decisions
 - Rust; deps limited to docs/ARCHITECTURE.md allowed list.
@@ -31,6 +31,7 @@ Fragile: frozen pointer until M4.6 (live motion default). Compensating release a
 - approved P2: `feedback = "notify"` added as M4.5 (notify-send via M4.2 path, no new deps).
 - approved P3: M4.6 live-motion default (`freeze_pointer = false`, `click_slop_px = 6`, between-band swallowed); M3.3 now = freeze_pointer=true mode. Caveat: focus-follows-mouse may shift focus during live strokes.
 - M4.1: key names = aliases (ctrl/control, shift, alt, altgr, super/meta/win/logo, return, escape, del, ins, pgup, pgdn, period, print) or any evdev KEY_* name without prefix, case-insensitive. Only the last key may be a non-modifier; no duplicates; BTN_* rejected. One key event per report; modifiers released in reverse. Virtual keyboard declares 1..=0xff and 0x160..=0x2bf. Config `Action::Key` stays a String until M4.3/M4.4 validate it. The uinput test types shift+F24.
+- M4.2: no shell (argv direct; opt in via ["sh","-c",..]); env allowlist HOME USER LOGNAME SHELL PATH LANG LANGUAGE TZ DISPLAY XAUTHORITY WAYLAND_DISPLAY DBUS_SESSION_BUS_ADDRESS DESKTOP_SESSION SWAYSOCK I3SOCK HYPRLAND_INSTANCE_SIGNATURE + LC_* + XDG_*; PATH default if missing; cwd $HOME or /; stdin+stdout null, stderr inherited; reaped by a thread (no unsafe/setsid).
 - Stroke grammar: 8 tokens U,D,L,R,UL,UR,DL,DR joined by `-` (so `DR` = down-right diagonal, `L-U` = left then up).
 - Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.
 
