@@ -31,6 +31,7 @@ Dev: tempfile, proptest.
 ```toml
 trigger = "right"          # right | middle | side | extra
 min_stroke_px = 40
+escape = "left+right+middle"  # hold all to exit run (failsafe)
 
 [[binding]]
 stroke = "L"

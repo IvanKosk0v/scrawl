@@ -24,13 +24,28 @@ pub struct RecordArgs {
     pub config: Option<PathBuf>,
 }
 
+/// Options of `run`.
+#[derive(Debug, Clone, Args)]
+pub struct RunArgs {
+    /// Evdev node to grab (default: the first mouse found).
+    #[arg(long)]
+    pub device: Option<PathBuf>,
+    /// Config file (default: right-button trigger, 40 px, escape chord left+right+middle).
+    #[arg(long)]
+    pub config: Option<PathBuf>,
+    /// Failsafe: exit (releasing the mouse) after this many seconds.
+    #[arg(long, value_name = "SECONDS", value_parser = clap::value_parser!(u64).range(1..))]
+    pub timeout: Option<u64>,
+}
+
 /// Available subcommands.
 #[derive(Debug, Clone, Subcommand)]
 pub enum Command {
     /// Print the recognized stroke after each trigger release.
     Record(RecordArgs),
-    /// Run the daemon.
-    Run,
+    /// Grab the mouse, forward it to a virtual mouse and print recognized strokes. Holding the escape chord
+    /// (default left+right+middle) exits.
+    Run(RunArgs),
     /// Validate the configuration file.
     CheckConfig,
     /// List available mouse devices.
@@ -42,7 +57,7 @@ impl Command {
     pub fn name(&self) -> &'static str {
         match self {
             Command::Record(_) => "record",
-            Command::Run => "run",
+            Command::Run(_) => "run",
             Command::CheckConfig => "check-config",
             Command::ListDevices => "list-devices",
         }

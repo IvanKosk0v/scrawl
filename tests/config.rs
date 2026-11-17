@@ -1,6 +1,6 @@
 //! M0.3: config parsing and validation.
 
-use strokebind::config::{Action, Config, Trigger};
+use strokebind::config::{Action, Config, MouseButton, Trigger};
 use strokebind::error::Error;
 
 const VALID: &str = r#"
@@ -98,4 +98,38 @@ fn typo_in_binding_key_is_rejected() {
     let (line, msg) = config_error(src);
     assert_eq!(line, Some(6));
     assert!(msg.contains("strok"), "message: {msg}");
+}
+
+#[test]
+fn escape_defaults_to_left_right_middle() {
+    let cfg = Config::parse("trigger = \"right\"\n").expect("valid");
+    assert_eq!(
+        cfg.escape.buttons(),
+        &[MouseButton::Left, MouseButton::Right, MouseButton::Middle]
+    );
+}
+
+#[test]
+fn escape_parses_custom_chord() {
+    let cfg = Config::parse("trigger = \"right\"\nescape = \"side+extra\"\n").expect("valid");
+    assert_eq!(
+        cfg.escape.buttons(),
+        &[MouseButton::Side, MouseButton::Extra]
+    );
+}
+
+#[test]
+fn escape_rejects_unknown_button_with_line() {
+    let (line, msg) = config_error("trigger = \"right\"\nescape = \"left+banana\"\n");
+    assert_eq!(line, Some(2));
+    assert!(msg.contains("banana"), "{msg}");
+}
+
+#[test]
+fn escape_rejects_fewer_than_two_distinct_buttons() {
+    for chord in ["left", "left+left", ""] {
+        let (line, msg) = config_error(&format!("trigger = \"right\"\nescape = \"{chord}\"\n"));
+        assert_eq!(line, Some(2), "{chord}");
+        assert!(msg.contains("two"), "{chord}: {msg}");
+    }
 }
