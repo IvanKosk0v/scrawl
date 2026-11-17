@@ -6,7 +6,7 @@ Branch: main (create m3-grab from main before M3.1)
 Last session: M2 closed
 
 ## Handoff
-Done: M2 merged (list-devices, event loop, read-only record verified by user).
+Done: M2 merged to main and pushed by the user via ssh (list-devices, event loop, read-only record).
 Next: M3.1 uinput virtual mouse mirroring source capabilities (plan mode advised; highest risk).
 Fragile: SYN_DROPPED can drop a buffered trigger release; resync via get_key_state or reset loop state before grab (M3). min_step_len guess.
 
