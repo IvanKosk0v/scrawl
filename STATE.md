@@ -1,14 +1,14 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
 Current milestone: M3
-Current task: M3.1
-Branch: main (create m3-grab from main before M3.1)
-Last session: M2 closed
+Current task: M3.2
+Branch: m3-grab
+Last session: M3.1 done
 
 ## Handoff
-Done: M2 merged to main and pushed by the user via ssh (list-devices, event loop, read-only record).
-Next: M3.1 uinput virtual mouse mirroring source capabilities (plan mode advised; highest risk).
-Fragile: SYN_DROPPED can drop a buffered trigger release; resync via get_key_state or reset loop state before grab (M3). min_step_len guess.
+Done: M3.1 `device::virtual_mouse` (MouseCaps mirror keys/rel/msc/props/input_id; VirtualMouse create/emit/dev_node; UinputDenied error; own devices skipped in list_mice).
+Next: M3.2 exclusive grab with release on Drop, panic hook, SIGINT/SIGTERM (one test per path).
+Fragile: SYN_DROPPED can drop a buffered trigger release, so resync before grab. uinput node needs udev for a moment after creation (ignored test retries open).
 
 ## Decisions
 - Rust; deps limited to docs/ARCHITECTURE.md allowed list.
@@ -23,6 +23,7 @@ Fragile: SYN_DROPPED can drop a buffered trigger release; resync via get_key_sta
 - M2.1: opens nodes with evdev Device::open (read-only, no grab); unreadable-only => PermissionDenied error with input-group/udev hint; other open failures skipped. Removed device::MODULE placeholder; layout test now references list_mice_in.
 - M2.2: no EventSource trait; the loop takes any iterator of Result<InputEvent>. Unfinished stroke at end of stream is discarded; LoopParams::from_config: min_run = min_stroke_px, min_step = min_stroke_px/4.
 - M2.3: ReportMapper folds each SYN_REPORT into one Motion (first) then button changes; ignores autorepeat and non-trigger buttons. record defaults: first mouse, Right trigger, 40px.
+- M3.1: abs axes not mirrored; virtual name `strokebind: <src>` cut to 78 bytes (evdev build() asserts <80); real-uinput test is #[ignore], run with `cargo test --test virtual_mouse -- --ignored`.
 - Stroke grammar: 8 tokens U,D,L,R,UL,UR,DL,DR joined by `-` (so `DR` = down-right diagonal, `L-U` = left then up).
 - Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.
 

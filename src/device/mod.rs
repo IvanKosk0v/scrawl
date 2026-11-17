@@ -2,6 +2,7 @@
 
 pub mod event;
 pub mod source;
+pub mod virtual_mouse;
 
 pub use event::InputEvent;
 
@@ -41,7 +42,7 @@ pub fn list_mice() -> Result<Vec<DeviceInfo>, Error> {
     list_mice_in(Path::new(INPUT_DIR))
 }
 
-/// List mice among the `event*` nodes of `dir`, sorted by path.
+/// List mice among the `event*` nodes of `dir`, sorted by path. strokebind's own virtual devices are skipped.
 ///
 /// Entries and devices that cannot be opened for reasons other than permissions are skipped. If some node was
 /// unreadable and no mouse was found, the permission error is returned so the user gets a hint.
@@ -65,9 +66,13 @@ pub fn list_mice_in(dir: &Path) -> Result<Vec<DeviceInfo>, Error> {
     for path in nodes {
         match source::open_readonly(&path) {
             Ok(dev) => {
-                if is_mouse(dev.supported_keys(), dev.supported_relative_axes()) {
+                let name = dev.name().unwrap_or("unknown");
+                // Our own virtual mouse must never become a source (feedback loop).
+                if is_mouse(dev.supported_keys(), dev.supported_relative_axes())
+                    && !virtual_mouse::is_virtual_name(name)
+                {
                     mice.push(DeviceInfo {
-                        name: dev.name().unwrap_or("unknown").to_owned(),
+                        name: name.to_owned(),
                         path,
                     });
                 }

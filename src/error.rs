@@ -20,6 +20,13 @@ pub enum Error {
         .0.display()
     )]
     PermissionDenied(PathBuf),
+    /// The uinput node exists but this user may not write it.
+    #[error(
+        "permission denied opening {}: add your user to the `input` group and log in again, \
+         or install the strokebind udev rule for uinput (see README)",
+        .0.display()
+    )]
+    UinputDenied(PathBuf),
     /// An I/O operation on a path failed.
     #[error("{}: {source}", path.display())]
     Io {
