@@ -1,4 +1,4 @@
-# cargo-deny config. Not yet run (no dependencies exist). Task M0.4 must make `cargo deny check` pass.
+# cargo-deny config; `cargo deny check` runs from scripts/check.sh and CI.
 [advisories]
 version = 2
 
