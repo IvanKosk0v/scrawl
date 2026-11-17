@@ -16,7 +16,7 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 - [x] M1.4 Property tests (proptest): never panics on arbitrary points; same stroke under uniform scaling and small jitter; empty/one-point input = no stroke. Acceptance: proptests pass with >= 256 cases.
 
 ## M2 Device layer (read-only, NO grab)
-- [ ] M2.1 `list-devices`: enumerate mice via evdev. Acceptance: prints name + path; permission error gives a helpful message (test the message).
+- [x] M2.1 `list-devices`: enumerate mice via evdev. Acceptance: prints name + path; permission error gives a helpful message (test the message).
 - [ ] M2.2 Event loop: trigger button + REL_X/REL_Y -> points -> recognizer. Acceptance: integration test with a fake event source.
 - [ ] M2.3 `record` prints the stroke after each trigger release. Acceptance: fake-source test; user verifies on real hardware.
 

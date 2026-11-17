@@ -18,7 +18,7 @@ fn help_lists_subcommands() {
 #[test]
 fn stub_subcommand_reports_not_implemented() {
     let out = Command::new(env!("CARGO_BIN_EXE_strokebind"))
-        .arg("list-devices")
+        .arg("record")
         .output()
         .expect("run strokebind");
     assert!(!out.status.success());

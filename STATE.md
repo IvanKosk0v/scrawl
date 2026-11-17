@@ -1,14 +1,14 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
 Current milestone: M2
-Current task: M2.1
-Branch: (create `m2-devices` from main on first /next)
-Last session: M1 closed
+Current task: M2.2
+Branch: m2-devices
+Last session: M2.1 done
 
 ## Handoff
-Done: M1 Recognizer merged to main (segments, stroke strings, matcher, proptests).
-Next: M2.1 list-devices via evdev (read-only, NO grab).
-Fragile: tolerance/min_step not yet in Config; MODULE placeholder consts remain. Push + CI not yet run.
+Done: M2.1 device::{is_mouse,list_mice,list_mice_in}, Error::{PermissionDenied,Io}, list-devices wired; evdev + tempfile added.
+Next: M2.2 event loop with fake event source (trigger button + REL_X/Y -> points -> recognizer).
+Fragile: list_mice_in has no success-path test without hardware; user should run `strokebind list-devices` after joining `input` group. Push + CI not yet run.
 
 ## Decisions
 - Rust; deps limited to docs/ARCHITECTURE.md allowed list.
@@ -20,6 +20,7 @@ Fragile: tolerance/min_step not yet in Config; MODULE placeholder consts remain.
 - M1.2: noise runs dropped after merging, then neighbours re-merged (R,tiny U,R -> R); no stroke = None.
 - M1.3: tolerance = max total 45-degree steps (circular) across equal-length strokes; ties for best distance (incl. duplicate bindings) = Ambiguous, no action.
 - M1.4: scaling/jitter proptests use exact-grid paths (20px steps, jitter +-2) so expectations are deterministic.
+- M2.1: opens nodes with evdev Device::open (read-only, no grab); unreadable-only => PermissionDenied error with input-group/udev hint; other open failures skipped. Removed device::MODULE placeholder; layout test now references list_mice_in.
 - Stroke grammar: 8 tokens U,D,L,R,UL,UR,DL,DR joined by `-` (so `DR` = down-right diagonal, `L-U` = left then up).
 - Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.
 
