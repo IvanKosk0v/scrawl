@@ -26,3 +26,6 @@ expect_used = "warn"
 dbg_macro = "warn"
 todo = "warn"
 print_stdout = "allow"
+
+[dev-dependencies]
+proptest = "1"
