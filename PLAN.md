@@ -18,7 +18,7 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 ## M2 Device layer (read-only, NO grab)
 - [x] M2.1 `list-devices`: enumerate mice via evdev. Acceptance: prints name + path; permission error gives a helpful message (test the message).
 - [x] M2.2 Event loop: trigger button + REL_X/REL_Y -> points -> recognizer. Acceptance: integration test with a fake event source.
-- [ ] M2.3 `record` prints the stroke after each trigger release. Acceptance: fake-source test; user verifies on real hardware.
+- [x] M2.3 `record` prints the stroke after each trigger release. Acceptance: fake-source test; user verifies on real hardware.
 
 ## M3 Grab + passthrough (highest risk; use plan mode; strongest model advised)
 - [ ] M3.1 uinput virtual mouse mirroring the source capabilities. Acceptance: tests on fake source; manual check.

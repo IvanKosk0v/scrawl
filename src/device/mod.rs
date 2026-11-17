@@ -1,6 +1,7 @@
 //! evdev enumeration (read-only; nothing here grabs a device).
 
 pub mod event;
+pub mod source;
 
 pub use event::InputEvent;
 
