@@ -45,6 +45,20 @@ impl Direction {
         Direction::DR,
     ];
 
+    /// The token used in stroke strings, e.g. `DR`.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Direction::R => "R",
+            Direction::DR => "DR",
+            Direction::D => "D",
+            Direction::DL => "DL",
+            Direction::L => "L",
+            Direction::UL => "UL",
+            Direction::U => "U",
+            Direction::UR => "UR",
+        }
+    }
+
     fn from_delta(dx: f64, dy: f64) -> Self {
         // Flip y so that "up" on screen is a positive angle.
         let sector = ((-dy).atan2(dx) / FRAC_PI_4).round() as i64;
