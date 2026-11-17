@@ -1,41 +1,15 @@
 //! M3.1: uinput virtual mouse mirroring the source capabilities (no grab).
 
+mod common;
+
 use std::path::PathBuf;
 
-use evdev::{
-    AttributeSet, BusType, EventType, InputId, KeyCode, MiscCode, PropType, RelativeAxisCode,
-};
+use common::{fake_caps, open_when_ready};
+use evdev::{EventType, RelativeAxisCode};
 use strokebind::device::virtual_mouse::{
-    is_virtual_name, virtual_name, MouseCaps, VirtualMouse, MAX_NAME_LEN,
+    is_virtual_name, virtual_name, VirtualMouse, MAX_NAME_LEN,
 };
 use strokebind::error::Error;
-
-/// Fake source: capabilities of a typical 5-button wheel mouse.
-fn fake_caps(name: &str) -> MouseCaps {
-    MouseCaps {
-        name: name.to_owned(),
-        id: InputId::new(BusType::BUS_USB, 0x046d, 0xc077, 0x0111),
-        keys: [
-            KeyCode::BTN_LEFT,
-            KeyCode::BTN_RIGHT,
-            KeyCode::BTN_MIDDLE,
-            KeyCode::BTN_SIDE,
-            KeyCode::BTN_EXTRA,
-        ]
-        .into_iter()
-        .collect(),
-        rel: [
-            RelativeAxisCode::REL_X,
-            RelativeAxisCode::REL_Y,
-            RelativeAxisCode::REL_WHEEL,
-            RelativeAxisCode::REL_WHEEL_HI_RES,
-        ]
-        .into_iter()
-        .collect(),
-        msc: [MiscCode::MSC_SCAN].into_iter().collect(),
-        props: AttributeSet::<PropType>::new(),
-    }
-}
 
 #[test]
 fn virtual_name_has_prefix() {
@@ -67,19 +41,6 @@ fn uinput_denied_message_has_hint() {
     assert!(msg.contains("/dev/uinput"), "{msg}");
     assert!(msg.contains("input"), "{msg}");
     assert!(msg.contains("udev"), "{msg}");
-}
-
-/// udev applies the node's group a moment after creation, so retry for up to 2 s.
-fn open_when_ready(node: &std::path::Path) -> evdev::Device {
-    let mut last = None;
-    for _ in 0..40 {
-        match strokebind::device::source::open_readonly(node) {
-            Ok(dev) => return dev,
-            Err(e) => last = Some(e),
-        }
-        std::thread::sleep(std::time::Duration::from_millis(50));
-    }
-    panic!("open {}: {last:?}", node.display());
 }
 
 /// Needs a writable /dev/uinput; run with `cargo test --test virtual_mouse -- --ignored`.

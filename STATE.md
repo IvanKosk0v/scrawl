@@ -1,14 +1,14 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
 Current milestone: M3
-Current task: M3.2
+Current task: M3.3
 Branch: m3-grab
-Last session: M3.1 done
+Last session: M3.2 done
 
 ## Handoff
-Done: M3.1 `device::virtual_mouse` (MouseCaps mirror keys/rel/msc/props/input_id; VirtualMouse create/emit/dev_node; UinputDenied error; own devices skipped in list_mice).
-Next: M3.2 exclusive grab with release on Drop, panic hook, SIGINT/SIGTERM (one test per path).
-Fragile: SYN_DROPPED can drop a buffered trigger release, so resync before grab. uinput node needs udev for a moment after creation (ignored test retries open).
+Done: M3.2 `device::grab` (Grabbed: grab/device_mut, ungrab on Drop; install_failsafes: panic hook exit 101, signal thread exit 128+sig). tests/grab.rs child-process tests.
+Next: M3.3 click passthrough (hold press until stroke-vs-click decided; replay plain click). Wire Grabbed + VirtualMouse.
+Fragile: SYN_DROPPED can drop a buffered trigger release, so resync before grab. uinput node needs udev for a moment after creation (tests retry open).
 
 ## Decisions
 - Rust; deps limited to docs/ARCHITECTURE.md allowed list.
@@ -24,6 +24,7 @@ Fragile: SYN_DROPPED can drop a buffered trigger release, so resync before grab.
 - M2.2: no EventSource trait; the loop takes any iterator of Result<InputEvent>. Unfinished stroke at end of stream is discarded; LoopParams::from_config: min_run = min_stroke_px, min_step = min_stroke_px/4.
 - M2.3: ReportMapper folds each SYN_REPORT into one Motion (first) then button changes; ignores autorepeat and non-trigger buttons. record defaults: first mouse, Right trigger, 40px.
 - M3.1: abs axes not mirrored; virtual name `strokebind: <src>` cut to 78 bytes (evdev build() asserts <80); real-uinput test is #[ignore], run with `cargo test --test virtual_mouse -- --ignored`.
+- M3.2: release model = kernel drops grab on fd close; panic (any thread) and SIGINT/SIGTERM exit the process (101/130/143) instead of unwinding. Relies on O_CLOEXEC (tested) so M4.2 children never inherit the grab. signal-hook 0.3 (allowed list). Grab tests are #[ignore] (uinput): `cargo test --test grab -- --ignored`.
 - Stroke grammar: 8 tokens U,D,L,R,UL,UR,DL,DR joined by `-` (so `DR` = down-right diagonal, `L-U` = left then up).
 - Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.
 

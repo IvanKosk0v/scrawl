@@ -27,6 +27,9 @@ pub enum Error {
         .0.display()
     )]
     UinputDenied(PathBuf),
+    /// Installing the SIGINT/SIGTERM failsafe failed.
+    #[error("cannot install signal handlers: {0}")]
+    Signals(std::io::Error),
     /// An I/O operation on a path failed.
     #[error("{}: {source}", path.display())]
     Io {
