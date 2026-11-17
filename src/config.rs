@@ -89,8 +89,11 @@ pub struct Config {
     pub binding: Vec<Binding>,
 }
 
+/// Default for `min_stroke_px`.
+pub const DEFAULT_MIN_STROKE_PX: u32 = 40;
+
 fn default_min_stroke_px() -> u32 {
-    40
+    DEFAULT_MIN_STROKE_PX
 }
 
 impl Config {

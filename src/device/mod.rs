@@ -1,4 +1,4 @@
-//! evdev enumeration (read-only; nothing here grabs a device).
+//! evdev enumeration (opened read-only; nothing here grabs a device).
 
 pub mod event;
 pub mod source;
@@ -9,7 +9,7 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
-use evdev::{AttributeSetRef, Device, KeyCode, RelativeAxisCode};
+use evdev::{AttributeSetRef, KeyCode, RelativeAxisCode};
 
 use crate::error::Error;
 
@@ -43,7 +43,7 @@ pub fn list_mice() -> Result<Vec<DeviceInfo>, Error> {
 
 /// List mice among the `event*` nodes of `dir`, sorted by path.
 ///
-/// Devices that cannot be opened for reasons other than permissions are skipped. If some node was
+/// Entries and devices that cannot be opened for reasons other than permissions are skipped. If some node was
 /// unreadable and no mouse was found, the permission error is returned so the user gets a hint.
 pub fn list_mice_in(dir: &Path) -> Result<Vec<DeviceInfo>, Error> {
     let io_err = |source| Error::Io {
@@ -52,7 +52,8 @@ pub fn list_mice_in(dir: &Path) -> Result<Vec<DeviceInfo>, Error> {
     };
     let mut nodes = Vec::new();
     for entry in fs::read_dir(dir).map_err(io_err)? {
-        let entry = entry.map_err(io_err)?;
+        // An unreadable directory entry must not hide the other devices.
+        let Ok(entry) = entry else { continue };
         if entry.file_name().to_string_lossy().starts_with("event") {
             nodes.push(entry.path());
         }
@@ -62,7 +63,7 @@ pub fn list_mice_in(dir: &Path) -> Result<Vec<DeviceInfo>, Error> {
     let mut mice = Vec::new();
     let mut denied = None;
     for path in nodes {
-        match Device::open(&path) {
+        match source::open_readonly(&path) {
             Ok(dev) => {
                 if is_mouse(dev.supported_keys(), dev.supported_relative_axes()) {
                     mice.push(DeviceInfo {

@@ -1,6 +1,6 @@
 //! Event loop: trigger button + relative motion to recognized strokes.
 
-use crate::config::{Config, Trigger};
+use crate::config::{Config, Trigger, DEFAULT_MIN_STROKE_PX};
 use crate::device::InputEvent;
 use crate::error::Error;
 use crate::recognizer::recognize;
@@ -17,15 +17,27 @@ pub struct LoopParams {
     pub min_run_len: f64,
 }
 
+impl Default for LoopParams {
+    /// Right button with the default `min_stroke_px`.
+    fn default() -> Self {
+        Self::new(Trigger::Right, DEFAULT_MIN_STROKE_PX)
+    }
+}
+
 impl LoopParams {
-    /// Derive parameters from the config: runs must reach `min_stroke_px`, steps a quarter of it.
-    pub fn from_config(cfg: &Config) -> Self {
-        let min_run_len = f64::from(cfg.min_stroke_px);
+    /// Runs must reach `min_stroke_px`, steps a quarter of it.
+    pub fn new(trigger: Trigger, min_stroke_px: u32) -> Self {
+        let min_run_len = f64::from(min_stroke_px);
         LoopParams {
-            trigger: cfg.trigger,
+            trigger,
             min_step_len: min_run_len / 4.0,
             min_run_len,
         }
+    }
+
+    /// Derive parameters from the config.
+    pub fn from_config(cfg: &Config) -> Self {
+        Self::new(cfg.trigger, cfg.min_stroke_px)
     }
 }
 

@@ -154,3 +154,9 @@ fn params_derive_from_config() {
     assert_eq!(p.min_run_len, 40.0);
     assert_eq!(p.min_step_len, 10.0);
 }
+
+#[test]
+fn default_params_match_default_config() {
+    let cfg = Config::parse("trigger = \"right\"").unwrap();
+    assert_eq!(LoopParams::default(), LoopParams::from_config(&cfg));
+}

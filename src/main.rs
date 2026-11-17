@@ -1,6 +1,6 @@
 use clap::Parser;
 use strokebind::cli::{Cli, Command, RecordArgs};
-use strokebind::config::{Config, Trigger};
+use strokebind::config::Config;
 use strokebind::device;
 use strokebind::device::source::EvdevSource;
 use strokebind::error::Error;
@@ -34,11 +34,7 @@ fn record(args: &RecordArgs) -> anyhow::Result<()> {
             })?;
             LoopParams::from_config(&Config::parse(&src)?)
         }
-        None => LoopParams {
-            trigger: Trigger::Right,
-            min_step_len: 10.0,
-            min_run_len: 40.0,
-        },
+        None => LoopParams::default(),
     };
     let path = match &args.device {
         Some(p) => p.clone(),
@@ -51,7 +47,7 @@ fn record(args: &RecordArgs) -> anyhow::Result<()> {
         }
     };
     eprintln!(
-        "recording from {} (read-only, no grab); Ctrl-C to quit",
+        "recording from {} (no grab); Ctrl-C to quit",
         path.display()
     );
     run_events(EvdevSource::open(&path)?, &params, |stroke| {

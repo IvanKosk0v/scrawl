@@ -38,6 +38,12 @@ impl ReportMapper {
                     });
                 }
             }
+            EventSummary::Synchronization(_, SynchronizationCode::SYN_DROPPED, _) => {
+                // Events were lost: whatever was buffered for this report is unreliable.
+                self.dx = 0;
+                self.dy = 0;
+                self.buttons.clear();
+            }
             EventSummary::Synchronization(_, SynchronizationCode::SYN_REPORT, _) => {
                 let mut out = Vec::new();
                 if self.dx != 0 || self.dy != 0 {
@@ -67,7 +73,13 @@ fn trigger_for(code: KeyCode) -> Option<Trigger> {
     }
 }
 
-/// Blocking iterator over the events of one evdev node, opened read-only without a grab.
+/// Open an evdev node strictly read-only (`Device::open` would try read-write first).
+pub fn open_readonly(path: &Path) -> std::io::Result<Device> {
+    let file = std::fs::OpenOptions::new().read(true).open(path)?;
+    Device::from_fd(file.into())
+}
+
+/// Blocking iterator over the events of one evdev node, opened with read-only access and no grab.
 pub struct EvdevSource {
     dev: Device,
     path: PathBuf,
@@ -86,7 +98,7 @@ impl std::fmt::Debug for EvdevSource {
 impl EvdevSource {
     /// Open `path` for reading. Permission problems yield [`Error::PermissionDenied`].
     pub fn open(path: &Path) -> Result<Self, Error> {
-        let dev = Device::open(path).map_err(|source| {
+        let dev = open_readonly(path).map_err(|source| {
             if source.kind() == std::io::ErrorKind::PermissionDenied {
                 Error::PermissionDenied(path.to_path_buf())
             } else {
@@ -119,6 +131,7 @@ impl Iterator for EvdevSource {
                         self.queue.extend(self.mapper.push(raw));
                     }
                 }
+                Err(source) if source.kind() == std::io::ErrorKind::Interrupted => {}
                 Err(source) => {
                     return Some(Err(Error::Io {
                         path: self.path.clone(),

@@ -95,3 +95,19 @@ fn raw_drag_yields_stroke() {
     .unwrap();
     assert_eq!(strokes, vec![Some("R".to_owned())]);
 }
+
+#[test]
+fn syn_dropped_discards_partial_report() {
+    let out = map_all(&[
+        rel(RelativeAxisCode::REL_X, 50),
+        key(KeyCode::BTN_RIGHT, 1),
+        Raw::new(
+            EventType::SYNCHRONIZATION.0,
+            SynchronizationCode::SYN_DROPPED.0,
+            0,
+        ),
+        rel(RelativeAxisCode::REL_Y, 7),
+        syn(),
+    ]);
+    assert_eq!(out, vec![InputEvent::Motion { dx: 0, dy: 7 }]);
+}
