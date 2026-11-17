@@ -1,6 +1,7 @@
 //! Pure stroke recognition logic, no I/O.
 
 /// Module marker, replaced as the module grows.
+pub mod matcher;
 pub mod segment;
 pub mod stroke;
 

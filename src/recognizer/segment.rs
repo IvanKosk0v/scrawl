@@ -59,6 +59,18 @@ impl Direction {
         }
     }
 
+    /// Parse a stroke-string token such as `DR`.
+    pub fn from_token(token: &str) -> Option<Self> {
+        Self::BY_SECTOR.into_iter().find(|d| d.as_str() == token)
+    }
+
+    /// Number of 45-degree steps between two directions, going the short way round (0..=4).
+    pub fn steps_to(self, other: Self) -> u32 {
+        let index = |d: Self| Self::BY_SECTOR.iter().position(|&x| x == d).unwrap_or(0) as u32;
+        let diff = index(self).abs_diff(index(other));
+        diff.min(8 - diff)
+    }
+
     fn from_delta(dx: f64, dy: f64) -> Self {
         // Flip y so that "up" on screen is a positive angle.
         let sector = ((-dy).atan2(dx) / FRAC_PI_4).round() as i64;
