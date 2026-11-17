@@ -1,14 +1,14 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
 Current milestone: M0
-Current task: M0.2
+Current task: M0.3
 Branch: m0-foundation
-Last session: M0.1 done
+Last session: M0.2 done
 
 ## Handoff
-Done: M0.1 layout (lib.rs, error, config, recognizer/device/sys stubs), thiserror added.
-Next: M0.2 clap CLI skeleton (clap not yet in Cargo.toml; it is on the allowed list).
-Fragile: module `MODULE` consts are placeholders; replace when modules get real content.
+Done: M0.2 clap CLI (src/cli.rs), stubs exit non-zero with "not implemented"; clap+anyhow added.
+Next: M0.3 config types + TOML parse (needs serde and toml deps, both on allowed list).
+Fragile: module MODULE consts are placeholders; Error::Unsupported only used by a test.
 
 ## Decisions
 - Rust; deps limited to docs/ARCHITECTURE.md allowed list.

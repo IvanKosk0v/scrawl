@@ -3,3 +3,4 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+- CLI skeleton: `record`, `run`, `check-config`, `list-devices` subcommands (stubs).
