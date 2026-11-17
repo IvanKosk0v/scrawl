@@ -1,14 +1,14 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
-Current milestone: M1
-Current task: none (M1 complete, run /milestone)
-Branch: m1-recognizer
-Last session: M1.4 done
+Current milestone: M2
+Current task: M2.1
+Branch: (create `m2-devices` from main on first /next)
+Last session: M1 closed
 
 ## Handoff
-Done: M1.4 recognizer::recognize pipeline + tests/recognizer_props.rs (256 cases each).
-Next: /milestone to close M1, then M2.1 (device layer, no grab).
-Fragile: tolerance not yet a Config field; recognize() params (min_step, min_run) not yet wired to config min_stroke_px.
+Done: M1 Recognizer merged to main (segments, stroke strings, matcher, proptests).
+Next: M2.1 list-devices via evdev (read-only, NO grab).
+Fragile: tolerance/min_step not yet in Config; MODULE placeholder consts remain. Push + CI not yet run.
 
 ## Decisions
 - Rust; deps limited to docs/ARCHITECTURE.md allowed list.
