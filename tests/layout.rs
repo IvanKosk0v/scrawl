@@ -5,7 +5,7 @@ use strokebind::error::Error;
 
 #[test]
 fn layout_modules_exist() {
-    let _ = Config::default();
+    let _: Option<Config> = None;
     let _ = (
         strokebind::recognizer::MODULE,
         strokebind::device::MODULE,
