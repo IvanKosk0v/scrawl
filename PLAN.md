@@ -43,7 +43,7 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 - [x] M5.6 X11 adapter via EWMH `_NET_ACTIVE_WINDOW` + `WM_CLASS` (x11rb). Acceptance: tests of property parsing; manual check on bspwm.
 - [x] M5.7 Sway adapter (IPC socket). Acceptance: parser tests with recorded JSON.
 - [x] M5.8 Hyprland adapter (IPC socket). Acceptance: parser tests with recorded JSON.
-- [ ] M5.9 README support matrix lines per backend; KDE + GNOME documented as global-only for 0.1. Acceptance: matrix in README, each line maps to a tested adapter or `GlobalOnly`.
+- [x] M5.9 README support matrix lines per backend; KDE + GNOME documented as global-only for 0.1. Acceptance: matrix in README, each line maps to a tested adapter or `GlobalOnly`.
 
 ## M6 Packaging + launch
 - [ ] M6.0 Compositor verification (manual, needs the user or VMs): run `record` and `run` on Sway, GNOME Wayland, KDE, Hyprland and X11; check clicks, strokes and key-combo actions. Acceptance: results per desktop recorded in the README support matrix (feeds M5.9 and M6.3).

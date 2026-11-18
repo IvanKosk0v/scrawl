@@ -1,12 +1,12 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
 Current milestone: M5
-Current task: M5.9
+Current task: none (M5 complete; run /milestone)
 Branch: m5-adapters
-Last session: M5.8 done, handoff saved (2026-11-18)
+Last session: M5.9 done, handoff saved (2026-11-18)
 ## Handoff
-Done: M5.8 `hyprland::HyprlandAdapter` (`j/activewindow` on `.socket.sock`, 40 ms timeouts; pure `socket_path`/`parse_active_window`, fake-socket test); Hyprland arm wired. All backends now have adapters.
-Next: M5.9 README support matrix (X11, Sway, Hyprland adapters; KDE+GNOME global-only; mark Sway/Hyprland/GNOME as untested on real sessions).
+Done: M5.9 README support matrix (X11/Sway/Hyprland per-app, KDE/GNOME global-only) + tests/readme.rs row checks.
+Next: /milestone to close M5 (bspwm X11 check still pending, per Fragile).
 Fragile: a hung lookup delays one trigger press by <= 50 ms, then lookups are skipped until it answers; KDE Wayland verified by user, Sway and Hyprland adapters have only fake-socket tests (real sessions untested)/GNOME untested; bspwm check of the X11 adapter pending (user wanted ~/strokebind-test.toml written; waiting on their terminal/browser WM_CLASS values); key-combo action not in the user's hardware list. Reload polled only on strokes. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
 
 ## Decisions

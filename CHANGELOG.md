@@ -3,6 +3,7 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+- README support matrix: per-app bindings on X11, Sway and Hyprland; KDE Plasma and GNOME use global bindings only.
 - On Hyprland, `run` reads the focused window's class over the Hyprland IPC socket at each trigger press, so `app` bindings fire there too.
 - On Sway, `run` reads the focused window (`app_id`, or the XWayland class) over the `SWAYSOCK` IPC at each trigger press, so `app` bindings fire there too.
 - On X11, `run` reads the focused window (EWMH `_NET_ACTIVE_WINDOW` + `WM_CLASS` class) at each trigger press, so `app` bindings now fire there; other desktops still use only global bindings.
