@@ -1,0 +1,2 @@
+error: err_profile_no_selector.toml line 3: a profile needs `device` (part of a mouse name, see `strokebind list-devices`) or `app` (window class or app_id)
+  3 | [[profile]]

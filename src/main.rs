@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use clap::Parser;
 use strokebind::actions::{command, feedback, select, Actions};
+use strokebind::backend::{window_backend, WindowBackend};
 use strokebind::check::check;
 use strokebind::cli::{CheckArgs, Cli, Command, RecordArgs, RunArgs};
 use strokebind::config::{Config, Resolved, DEFAULT_CLICK_SLOP_PX};
@@ -12,9 +13,14 @@ use strokebind::device::grab::{install_failsafes, Grabbed};
 use strokebind::device::source::{button_code, EvdevSource};
 use strokebind::device::virtual_mouse::{MouseCaps, VirtualMouse};
 use strokebind::error::Error;
+use strokebind::focus::Focused;
+use strokebind::hyprland::{socket_path, HyprlandAdapter};
 use strokebind::passthrough::{Mode, Passthrough};
 use strokebind::reload::ConfigWatcher;
 use strokebind::stroke_loop::{run_events, LoopParams};
+use strokebind::sway::SwayAdapter;
+use strokebind::window::{Bounded, GlobalOnly, NeverAnswers};
+use strokebind::x11::X11Adapter;
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
@@ -153,7 +159,8 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
         actions.prepare(&r.bindings)?;
     }
     eprintln!("grabbed {}; hold {} to exit", path.display(), escape);
-    forward(&mut grab, &mut out, engine, |stroke| {
+    let engine = Focused::new(engine, Box::new(window_adapter()));
+    forward(&mut grab, &mut out, engine, |stroke, app| {
         println!("{stroke}");
         match watcher.as_mut().and_then(ConfigWatcher::poll) {
             Some(Ok(new)) => {
@@ -184,7 +191,8 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
             Some(Err(e)) => eprintln!("config reload failed, keeping the previous one: {e}"),
             None => {}
         }
-        let action = current.as_ref().and_then(|r| select(&stroke, &r.bindings));
+        let bindings = current.as_ref().map(|r| r.bindings_for(app.as_ref()));
+        let action = bindings.as_deref().and_then(|b| select(&stroke, b));
         if let Some(action) = action {
             if let Err(e) = actions.perform(action) {
                 eprintln!("action for {stroke} failed: {e}");
@@ -200,4 +208,25 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
     })?;
     eprintln!("escape chord held, exiting");
     Ok(())
+}
+
+/// The bounded window adapter for `run`, picked from the session environment; backends without an
+/// adapter (KDE, GNOME) use the global bindings. `STROKEBIND_TEST_ADAPTER=hang` is a test hook:
+/// lookups never answer.
+fn window_adapter() -> Bounded {
+    if std::env::var_os("STROKEBIND_TEST_ADAPTER").is_some_and(|v| v == "hang") {
+        return Bounded::new(NeverAnswers);
+    }
+    match window_backend(|k| std::env::var_os(k)) {
+        WindowBackend::X11 => Bounded::new(X11Adapter),
+        WindowBackend::Sway => match std::env::var_os("SWAYSOCK") {
+            Some(socket) => Bounded::new(SwayAdapter::new(socket)),
+            None => Bounded::new(GlobalOnly),
+        },
+        WindowBackend::Hyprland => match socket_path(|k| std::env::var_os(k), |p| p.exists()) {
+            Some(socket) => Bounded::new(HyprlandAdapter::new(socket)),
+            None => Bounded::new(GlobalOnly),
+        },
+        WindowBackend::Unsupported => Bounded::new(GlobalOnly),
+    }
 }

@@ -35,12 +35,18 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 - [x] M4.6 `freeze_pointer` (default false) + `click_slop_px` (default 6, must be < min_stroke_px). false: REL_X/Y forwarded live while the trigger is held, only the press withheld; at release, by max distance from the press point: <= slop = click (press+release, MSC kept, at release position), recognized stroke = action and no click, otherwise swallowed. true: M3.3 behavior unchanged, slop unused. Acceptance: config validation tests; live-mode tests for click within slop, stroke, swallow band, press-move-return beyond slop; M3.3 tests still pass with true.
 
 ## M5 Per-app profiles (adapters; global fallback always works)
-- [ ] M5.1 Adapter trait `active_window() -> Option<AppId>`. Acceptance: mock-based tests.
-- [ ] M5.2 Sway + Hyprland adapters (IPC sockets). Acceptance: parser tests with recorded JSON.
-- [ ] M5.3 KDE + GNOME best-effort, or documented "global only". Acceptance: documented in README support matrix.
+- [x] M5.1 Adapter trait `active_window() -> Option<AppId>`. Acceptance: mock-based tests.
+- [x] M5.2 Config `app = "<WM_CLASS or app_id>"` on bindings and profiles; case-insensitive match, global fallback. Acceptance: parse/match tests; check-config validation with golden tests. (approved P6)
+- [x] M5.3 Wire WindowAdapter into `run`; active window sampled at trigger press, not release. Acceptance: mock-adapter test proving press-time sampling and global fallback.
+- [x] M5.4 Adapter timeout: every `active_window` lookup bounded to <= 50 ms; timeout = None = global bindings; while a hung lookup is outstanding, later presses get None at once (no thread pile-up). std only. Acceptance: never-answering adapter test: press-to-output latency <= ~50 ms and events still forwarded, escape chord still yields Escape (pure `Focused` tests); `run --timeout 1` still exits (#[ignore] uinput test, test-only hook injects the hung adapter). (approved P7)
+- [x] M5.5 Backend picker: WAYLAND_DISPLAY checked before DISPLAY (XWayland sets both); shared with M7.1 (P4). Acceptance: selection tests incl. both set => Wayland.
+- [x] M5.6 X11 adapter via EWMH `_NET_ACTIVE_WINDOW` + `WM_CLASS` (x11rb). Acceptance: tests of property parsing; manual check on bspwm.
+- [x] M5.7 Sway adapter (IPC socket). Acceptance: parser tests with recorded JSON.
+- [x] M5.8 Hyprland adapter (IPC socket). Acceptance: parser tests with recorded JSON.
+- [x] M5.9 README support matrix lines per backend; KDE + GNOME documented as global-only for 0.1. Acceptance: matrix in README, each line maps to a tested adapter or `GlobalOnly`.
 
 ## M6 Packaging + launch
-- [ ] M6.0 Compositor verification (manual, needs the user or VMs): run `record` and `run` on Sway, GNOME Wayland, KDE, Hyprland and X11; check clicks, strokes and key-combo actions. Acceptance: results per desktop recorded in the README support matrix (feeds M5.3 and M6.3).
+- [ ] M6.0 Compositor verification (manual, needs the user or VMs): run `record` and `run` on Sway, GNOME Wayland, KDE, Hyprland and X11; check clicks, strokes and key-combo actions. Acceptance: results per desktop recorded in the README support matrix (feeds M5.9 and M6.3).
 - [ ] M6.1 systemd user unit + udev rule + `install.sh` (no root-run daemon). Acceptance: fresh Ubuntu VM test notes.
 - [ ] M6.2 `.deb` via cargo-deb + release workflow. Acceptance: installs; `strokebind --version` works.
 - [ ] M6.3 README: pitch, 20s demo GIF, install, config example, support matrix, comparison table (docs/RESEARCH.md), FAQ. Acceptance: every claim maps to a tested feature; user approves the final text.

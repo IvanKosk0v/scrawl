@@ -1,0 +1,17 @@
+trigger = "right"
+
+[[binding]]
+stroke = "L"
+action = { key = "alt+left" }
+
+[[binding]]
+stroke = "L"
+app = "firefox"
+action = { key = "ctrl+shift+tab" }
+
+[[profile]]
+app = "kitty"
+
+[[profile.binding]]
+stroke = "R"
+action = { key = "ctrl+shift+t" }

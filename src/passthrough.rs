@@ -105,6 +105,11 @@ impl Passthrough {
         !self.escape.is_empty() && self.escape.iter().all(|c| self.held.contains(c))
     }
 
+    /// True while a trigger press waits for its release.
+    pub fn is_pending(&self) -> bool {
+        self.pending.is_some()
+    }
+
     /// Feed one raw event; outputs are produced only when a `SYN_REPORT` completes a report.
     pub fn push(&mut self, raw: InputEvent) -> Vec<Output> {
         match raw.destructure() {

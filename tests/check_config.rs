@@ -50,7 +50,7 @@ fn every_fixture_has_a_golden_file() {
             n += 1;
         }
     }
-    assert_eq!(n, 9, "update the test list below when adding fixtures");
+    assert_eq!(n, 13, "update the test list below when adding fixtures");
 }
 
 #[test]
@@ -105,4 +105,24 @@ fn missing_file_is_a_clear_error() {
     assert!(out.stdout.is_empty());
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(stderr.starts_with("error: nope.toml: "), "{stderr}");
+}
+
+#[test]
+fn ok_apps() {
+    assert_golden("ok_apps");
+}
+
+#[test]
+fn err_blank_app() {
+    assert_golden("err_blank_app");
+}
+
+#[test]
+fn err_app_profile_trigger() {
+    assert_golden("err_app_profile_trigger");
+}
+
+#[test]
+fn err_profile_no_selector() {
+    assert_golden("err_profile_no_selector");
 }
