@@ -6,6 +6,7 @@ pub mod cli;
 pub mod config;
 pub mod device;
 pub mod error;
+pub mod focus;
 pub mod passthrough;
 pub mod recognizer;
 pub mod reload;

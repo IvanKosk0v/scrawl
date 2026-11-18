@@ -12,9 +12,11 @@ use strokebind::device::grab::{install_failsafes, Grabbed};
 use strokebind::device::source::{button_code, EvdevSource};
 use strokebind::device::virtual_mouse::{MouseCaps, VirtualMouse};
 use strokebind::error::Error;
+use strokebind::focus::Focused;
 use strokebind::passthrough::{Mode, Passthrough};
 use strokebind::reload::ConfigWatcher;
 use strokebind::stroke_loop::{run_events, LoopParams};
+use strokebind::window::GlobalOnly;
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
@@ -153,7 +155,9 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
         actions.prepare(&r.bindings)?;
     }
     eprintln!("grabbed {}; hold {} to exit", path.display(), escape);
-    forward(&mut grab, &mut out, engine, |stroke| {
+    // M5.4 picks the real adapter; until then every stroke gets the global bindings.
+    let engine = Focused::new(engine, Box::new(GlobalOnly));
+    forward(&mut grab, &mut out, engine, |stroke, app| {
         println!("{stroke}");
         match watcher.as_mut().and_then(ConfigWatcher::poll) {
             Some(Ok(new)) => {
@@ -184,8 +188,7 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
             Some(Err(e)) => eprintln!("config reload failed, keeping the previous one: {e}"),
             None => {}
         }
-        // M5.3 passes the focused app; until then only bindings without `app` apply.
-        let bindings = current.as_ref().map(|r| r.bindings_for(None));
+        let bindings = current.as_ref().map(|r| r.bindings_for(app.as_ref()));
         let action = bindings.as_deref().and_then(|b| select(&stroke, b));
         if let Some(action) = action {
             if let Err(e) = actions.perform(action) {

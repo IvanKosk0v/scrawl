@@ -15,6 +15,8 @@ use std::time::{Duration, Instant};
 use common::{fake_caps, open_when_ready};
 use strokebind::device::grab::{install_failsafes, Grabbed};
 use strokebind::device::virtual_mouse::VirtualMouse;
+use strokebind::focus::Focused;
+use strokebind::window::GlobalOnly;
 
 const NODE_ENV: &str = "SB_CHILD_NODE";
 const MODE_ENV: &str = "SB_CHILD_MODE";
@@ -207,7 +209,8 @@ fn forward_end_to_end() {
     let (stroke_tx, stroke_rx) = mpsc::channel();
     let fwd = std::thread::spawn(move || {
         let engine = Passthrough::new(&LoopParams::new(Trigger::Right, 40));
-        forward(&mut grab, &mut out, engine, |s| {
+        let engine = Focused::new(engine, Box::new(GlobalOnly));
+        forward(&mut grab, &mut out, engine, |s, _app| {
             let _ = stroke_tx.send(s);
         })
     });

@@ -37,7 +37,7 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 ## M5 Per-app profiles (adapters; global fallback always works)
 - [x] M5.1 Adapter trait `active_window() -> Option<AppId>`. Acceptance: mock-based tests.
 - [x] M5.2 Config `app = "<WM_CLASS or app_id>"` on bindings and profiles; case-insensitive match, global fallback. Acceptance: parse/match tests; check-config validation with golden tests. (approved P6)
-- [ ] M5.3 Wire WindowAdapter into `run`; active window sampled at trigger press, not release. Acceptance: mock-adapter test proving press-time sampling and global fallback.
+- [x] M5.3 Wire WindowAdapter into `run`; active window sampled at trigger press, not release. Acceptance: mock-adapter test proving press-time sampling and global fallback.
 - [ ] M5.4 Backend picker: WAYLAND_DISPLAY checked before DISPLAY (XWayland sets both); shared with M7.1 (P4). Acceptance: selection tests incl. both set => Wayland.
 - [ ] M5.5 X11 adapter via EWMH `_NET_ACTIVE_WINDOW` + `WM_CLASS` (x11rb). Acceptance: tests of property parsing; manual check on bspwm.
 - [ ] M5.6 Sway adapter (IPC socket). Acceptance: parser tests with recorded JSON.
