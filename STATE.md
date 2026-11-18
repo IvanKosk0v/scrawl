@@ -6,9 +6,9 @@ Branch: m5-adapters
 Last session: M5.6 done, handoff saved (2026-11-18)
 
 ## Handoff
-Done: M5.6 `x11::X11Adapter` (fresh x11rb connection per lookup; pure `parse_active_window`/`parse_wm_class`); X11 arm of `window_adapter()` now `Bounded::new(X11Adapter)`. Manual bspwm check still to do by the user.
+Done: M5.6 `x11::X11Adapter` (fresh x11rb connection per lookup; pure `parse_active_window`/`parse_wm_class`); X11 arm of `window_adapter()` now `Bounded::new(X11Adapter)`. Manual bspwm check pending.
 Next: M5.7 Sway adapter (IPC socket via SWAYSOCK, serde_json parser tests with recorded JSON), replaces the Sway arm.
-Fragile: a hung lookup delays one trigger press by <= 50 ms, then lookups are skipped until it answers; no Wayland run yet (M6.0); key-combo action not in the user's hardware list. Reload polled only on strokes. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
+Fragile: a hung lookup delays one trigger press by <= 50 ms, then lookups are skipped until it answers; KDE Wayland verified by user, Sway/Hyprland/GNOME untested; bspwm check of the X11 adapter pending (user wanted ~/strokebind-test.toml written; waiting on their terminal/browser WM_CLASS values); key-combo action not in the user's hardware list. Reload polled only on strokes. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
 
 ## Decisions
 - Base: Rust; deps limited to docs/ARCHITECTURE.md allowed list; evdev grab + uinput forwarding so it works on every compositor; Dual license MIT OR Apache-2.0; MSRV 1.85.1: lowest passing version found by `cargo msrv find --min 1.70` (bisect; older toolchains fail on a dependency needing edition 2024).
@@ -33,9 +33,8 @@ Fragile: a hung lookup delays one trigger press by <= 50 ms, then lookups are sk
 - M5.2: app match = whole id, case-insensitive (stored trimmed+lowercased). `[[profile]]` needs `device` or `app`; `app` profile = bindings only (trigger/min_stroke_px/escape rejected), fits every mouse unless `device` also set (both must match); `app` on an app profile's binding rejected. Precedence per stroke: device-profile app binding > app profiles (file order) > global app binding > device-profile binding > global. `Resolved.bindings` = all candidates (keyboard prepare), `bindings_for(None)` = no-app only. Profile errors via serde try_from point at the `[[profile]]` header.
 - M5.3: no new engine Output; `Passthrough::is_pending()` + `Focused` wrapper detect press (pending off->on), one adapter call per press (clicks too), none for motion/other buttons. Press app kept until the next press. `forward` callback = `(stroke, Option<AppId>)`.
 - M5.4: one thread per lookup (`thread::Builder`, spawn failure = None); timed-out receiver kept, later lookups None at once until it answers or dies; late answer discarded. Stderr line on timeout. Test hook `STROKEBIND_TEST_ADAPTER=hang` in main.rs (`NeverAnswers`, #[doc(hidden)]); uinput tests `run_*_fires_with_hung_adapter` (#[ignore]).
-- M5.5: `WAYLAND_DISPLAY` > `DISPLAY`; empty = unset; under Wayland `HYPRLAND_INSTANCE_SIGNATURE` checked before `SWAYSOCK`, both ignored without `WAYLAND_DISPLAY`; anything else = `Unsupported` (KDE/GNOME). `DisplayServer` is the M7.1 overlay picker too.
+- M5.5: `WAYLAND_DISPLAY` > `DISPLAY`; empty = unset; under Wayland `HYPRLAND_INSTANCE_SIGNATURE` checked before `SWAYSOCK`, both ignored without `WAYLAND_DISPLAY`; anything else = `Unsupported` (KDE/GNOME). M5.6: X11 app id = `WM_CLASS` class (instance if blank), failure = None. `DisplayServer` is the M7.1 overlay picker too.
 - Manual verification (user, 2026-11-18): list-devices, record, run (pointer, clicks, right-click menu, strokes, notifications, timeout) on KDE Plasma Wayland behaved exactly as on X11 + bspwm. Use for M5.9/M6.0/M6.3 README matrix; Sway, Hyprland, GNOME still untested.
-- M5.6: app id = `WM_CLASS` class part (instance if class blank); lookup failure prints to stderr and gives None; `_NET_ACTIVE_WINDOW` 0 = None.
 - Stroke grammar: U,D,L,R,UL,UR,DL,DR joined by `-` (`L-U` = left then up). Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.
 
 ## Proposals (numbered; awaiting user `/approve P<n>` or `/reject P<n>`)
