@@ -43,6 +43,9 @@ pub enum Error {
     /// A run-command action has no program.
     #[error("run action needs a program, e.g. run = [\"notify-send\", \"hello\"]")]
     EmptyCommand,
+    /// A key action holds an invalid combo (config validation normally rejects it first).
+    #[error("invalid key combo: {0}")]
+    KeyCombo(String),
     /// A run-command action could not be started.
     #[error("cannot run `{program}`: {source}")]
     Spawn {

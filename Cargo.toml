@@ -17,6 +17,7 @@ clap = { version = "4", features = ["derive"] }
 anyhow = "1"
 evdev = "0.13"
 signal-hook = "0.3"
+notify = "8"
 
 [lints.rust]
 unsafe_code = "deny"      # only src/sys/ may `#![allow(unsafe_code)]`, each use documented

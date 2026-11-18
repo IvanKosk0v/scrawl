@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use clap::Parser;
+use strokebind::actions::{select, Actions};
 use strokebind::cli::{Cli, Command, RecordArgs, RunArgs};
 use strokebind::config::Config;
 use strokebind::device;
@@ -11,6 +12,7 @@ use strokebind::device::source::{button_code, EvdevSource};
 use strokebind::device::virtual_mouse::{MouseCaps, VirtualMouse};
 use strokebind::error::Error;
 use strokebind::passthrough::Passthrough;
+use strokebind::reload::ConfigWatcher;
 use strokebind::stroke_loop::{run_events, LoopParams};
 
 fn main() -> anyhow::Result<()> {
@@ -81,20 +83,60 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
         });
     }
     let cfg = load_config(args.config.as_deref())?;
-    let params = cfg
-        .as_ref()
-        .map_or_else(LoopParams::default, LoopParams::from_config);
-    let escape = cfg.map(|c| c.escape).unwrap_or_default();
-    let engine = Passthrough::new(&params)
-        .with_escape(escape.buttons().iter().map(|&b| button_code(b)).collect());
     let path = pick_device(args.device.as_deref())?;
     let mut grab = Grabbed::grab(&path)?;
     let caps = MouseCaps::from_device(grab.device_mut());
+    let mut current = cfg.as_ref().map(|c| c.resolve(&caps.name));
+    let params = current.as_ref().map_or_else(LoopParams::default, |r| {
+        LoopParams::new(r.trigger, r.min_stroke_px)
+    });
+    let escape = current
+        .as_ref()
+        .map(|r| r.escape.clone())
+        .unwrap_or_default();
+    let engine = Passthrough::new(&params)
+        .with_escape(escape.buttons().iter().map(|&b| button_code(b)).collect());
     // Refuse to run without a working escape; returning drops `grab`, releasing the mouse.
     caps.check_escape(&escape)?;
     let mut out = VirtualMouse::create(&caps)?;
+    // Hot reload needs a config file; a failure to watch only disables it.
+    let mut watcher = args
+        .config
+        .as_deref()
+        .and_then(|p| match ConfigWatcher::new(p) {
+            Ok(w) => Some(w),
+            Err(e) => {
+                eprintln!("hot reload disabled: {e}");
+                None
+            }
+        });
+    let mut actions = Actions::new();
     eprintln!("grabbed {}; hold {} to exit", path.display(), escape);
-    forward(&mut grab, &mut out, engine, |stroke| println!("{stroke}"))?;
+    forward(&mut grab, &mut out, engine, |stroke| {
+        println!("{stroke}");
+        match watcher.as_mut().and_then(ConfigWatcher::poll) {
+            Some(Ok(new)) => {
+                let new = new.resolve(&caps.name);
+                if let Some(old) = current.as_ref() {
+                    if (old.trigger, old.min_stroke_px, &old.escape)
+                        != (new.trigger, new.min_stroke_px, &new.escape)
+                    {
+                        eprintln!("trigger, min_stroke_px and escape change only after a restart");
+                    }
+                }
+                current = Some(new);
+                eprintln!("config reloaded");
+            }
+            Some(Err(e)) => eprintln!("config reload failed, keeping the previous one: {e}"),
+            None => {}
+        }
+        let action = current.as_ref().and_then(|r| select(&stroke, &r.bindings));
+        if let Some(action) = action {
+            if let Err(e) = actions.perform(action) {
+                eprintln!("action for {stroke} failed: {e}");
+            }
+        }
+    })?;
     eprintln!("escape chord held, exiting");
     Ok(())
 }

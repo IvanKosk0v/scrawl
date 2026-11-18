@@ -7,5 +7,6 @@ pub mod device;
 pub mod error;
 pub mod passthrough;
 pub mod recognizer;
+pub mod reload;
 pub mod stroke_loop;
 pub mod sys;

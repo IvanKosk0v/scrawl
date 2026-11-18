@@ -133,3 +133,96 @@ fn escape_rejects_fewer_than_two_distinct_buttons() {
         assert!(msg.contains("two"), "{chord}: {msg}");
     }
 }
+
+#[test]
+fn invalid_key_combo_is_rejected_at_load_with_line() {
+    let src = "trigger = \"right\"\n\n[[binding]]\nstroke = \"L\"\naction = { key = \"ctrl+nosuchkey\" }\n";
+    let (line, msg) = config_error(src);
+    assert_eq!(line, Some(5));
+    assert!(msg.contains("nosuchkey"), "message: {msg}");
+}
+
+#[test]
+fn empty_run_command_is_rejected_at_load_with_line() {
+    for run in ["[]", "[\"\"]"] {
+        let src = format!(
+            "trigger = \"right\"\n\n[[binding]]\nstroke = \"L\"\naction = {{ run = {run} }}\n"
+        );
+        let (line, msg) = config_error(&src);
+        assert_eq!(line, Some(5), "run = {run}");
+        assert!(msg.contains("program"), "message: {msg}");
+    }
+}
+
+const PROFILES: &str = r#"
+trigger = "right"
+min_stroke_px = 40
+
+[[binding]]
+stroke = "L"
+action = { key = "alt+left" }
+
+[[binding]]
+stroke = "R"
+action = { key = "alt+right" }
+
+[[profile]]
+device = "trackball"
+trigger = "middle"
+min_stroke_px = 80
+
+[[profile.binding]]
+stroke = "L"
+action = { key = "ctrl+w" }
+"#;
+
+#[test]
+fn unmatched_device_gets_the_global_settings() {
+    let cfg = Config::parse(PROFILES).expect("valid");
+    let p = cfg.resolve("Logitech G502");
+    assert_eq!(p.trigger, Trigger::Right);
+    assert_eq!(p.min_stroke_px, 40);
+    assert_eq!(p.bindings.len(), 2);
+}
+
+#[test]
+fn profile_matches_device_name_substring_case_insensitively() {
+    let cfg = Config::parse(PROFILES).expect("valid");
+    let p = cfg.resolve("Kensington TrackBall Pro");
+    assert_eq!(p.trigger, Trigger::Middle);
+    assert_eq!(p.min_stroke_px, 80);
+}
+
+#[test]
+fn profile_bindings_override_global_ones_for_the_same_stroke() {
+    let cfg = Config::parse(PROFILES).expect("valid");
+    let p = cfg.resolve("trackball");
+    let strokes: Vec<(&str, &Action)> = p
+        .bindings
+        .iter()
+        .map(|b| (b.stroke.as_str(), &b.action))
+        .collect();
+    assert_eq!(
+        strokes,
+        vec![
+            ("L", &Action::Key("ctrl+w".into())),
+            ("R", &Action::Key("alt+right".into())),
+        ]
+    );
+}
+
+#[test]
+fn profile_without_overrides_inherits_global_settings() {
+    let src = "trigger = \"side\"\nmin_stroke_px = 60\n\n[[profile]]\ndevice = \"x\"\n";
+    let cfg = Config::parse(src).expect("valid");
+    let p = cfg.resolve("x");
+    assert_eq!(p.trigger, Trigger::Side);
+    assert_eq!(p.min_stroke_px, 60);
+}
+
+#[test]
+fn profile_requires_device_and_rejects_bad_min_stroke() {
+    let (line, msg) = config_error("trigger = \"right\"\n\n[[profile]]\ntrigger = \"middle\"\n");
+    assert_eq!(line, Some(3));
+    assert!(msg.contains("device"), "message: {msg}");
+}

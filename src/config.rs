@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Deserializer};
 
+use crate::actions::key::KeyCombo;
 use crate::error::Error;
 
 const DIRECTIONS: [&str; 8] = ["U", "D", "L", "R", "UL", "UR", "DL", "DR"];
@@ -161,14 +162,39 @@ impl<'de> Deserialize<'de> for Stroke {
     }
 }
 
-/// What to do when a stroke is recognized.
+/// What to do when a stroke is recognized. Validated when the config is loaded.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(try_from = "RawAction")]
 pub enum Action {
-    /// Emit a key combo, e.g. `alt+left`.
+    /// Emit a key combo, e.g. `alt+left` (always a valid [`KeyCombo`]).
     Key(String),
-    /// Run a command with arguments (no shell).
+    /// Run a command with arguments (no shell); the program is never empty.
     Run(Vec<String>),
+}
+
+/// Action as written in the file, before validation.
+#[derive(Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum RawAction {
+    Key(String),
+    Run(Vec<String>),
+}
+
+impl TryFrom<RawAction> for Action {
+    type Error = String;
+
+    fn try_from(raw: RawAction) -> Result<Self, String> {
+        match raw {
+            RawAction::Key(combo) => {
+                combo.parse::<KeyCombo>()?;
+                Ok(Action::Key(combo))
+            }
+            RawAction::Run(argv) if argv.first().is_none_or(String::is_empty) => {
+                Err(Error::EmptyCommand.to_string())
+            }
+            RawAction::Run(argv) => Ok(Action::Run(argv)),
+        }
+    }
 }
 
 /// One stroke-to-action binding.
@@ -196,6 +222,39 @@ pub struct Config {
     /// Stroke bindings.
     #[serde(default)]
     pub binding: Vec<Binding>,
+    /// Per-device overrides; the first whose `device` matches wins.
+    #[serde(default)]
+    pub profile: Vec<Profile>,
+}
+
+/// Overrides for one kind of mouse, selected by device name.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Profile {
+    /// Case-insensitive substring of the device name this profile applies to.
+    pub device: String,
+    /// Trigger button for this device (default: the global one).
+    pub trigger: Option<Trigger>,
+    /// Minimum stroke length for this device (default: the global one).
+    pub min_stroke_px: Option<u32>,
+    /// Escape chord for this device (default: the global one).
+    pub escape: Option<Escape>,
+    /// Bindings that take precedence over the global ones for the same stroke.
+    #[serde(default)]
+    pub binding: Vec<Binding>,
+}
+
+/// The settings that apply to one device: global values with its profile applied.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Resolved {
+    /// Button held while drawing a stroke.
+    pub trigger: Trigger,
+    /// Minimum movement in pixels before a press counts as a stroke.
+    pub min_stroke_px: u32,
+    /// Failsafe chord.
+    pub escape: Escape,
+    /// Profile bindings first, then the global ones for strokes the profile does not bind.
+    pub bindings: Vec<Binding>,
 }
 
 /// Default for `min_stroke_px`.
@@ -214,5 +273,31 @@ impl Config {
                 .map(|s| src[..s.start].bytes().filter(|&b| b == b'\n').count() + 1),
             message: e.message().to_owned(),
         })
+    }
+
+    /// The settings for the device called `device_name`: the first profile whose `device` is a
+    /// case-insensitive substring of the name is applied over the global settings.
+    pub fn resolve(&self, device_name: &str) -> Resolved {
+        let name = device_name.to_lowercase();
+        let profile = self
+            .profile
+            .iter()
+            .find(|p| name.contains(&p.device.to_lowercase()));
+        let mut bindings = profile.map_or_else(Vec::new, |p| p.binding.clone());
+        for b in &self.binding {
+            if !bindings.iter().any(|x| x.stroke == b.stroke) {
+                bindings.push(b.clone());
+            }
+        }
+        Resolved {
+            trigger: profile.and_then(|p| p.trigger).unwrap_or(self.trigger),
+            min_stroke_px: profile
+                .and_then(|p| p.min_stroke_px)
+                .unwrap_or(self.min_stroke_px),
+            escape: profile
+                .and_then(|p| p.escape.clone())
+                .unwrap_or_else(|| self.escape.clone()),
+            bindings,
+        }
     }
 }

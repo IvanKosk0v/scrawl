@@ -3,6 +3,9 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+- `run` performs the bound action (key combo or command) for each recognized stroke; invalid key combos and empty `run` commands are rejected when the config loads.
+- `[[profile]]` sections (`device = "<name substring>"`, optional `trigger`, `min_stroke_px`, `escape`, `[[profile.binding]]`) override settings per mouse.
+- `run --config FILE` reloads bindings when the file changes (a broken edit is reported and ignored); trigger, `min_stroke_px` and `escape` need a restart.
 - `strokebind run [--device PATH] [--config FILE] [--timeout N]` grabs the mouse, forwards it through a virtual mouse (plain clicks replayed unchanged) and prints recognized strokes.
 - `run` refuses to start when the escape chord uses a button the mouse does not have.
 - Failsafes for `run`: escape chord (config `escape`, default `left+right+middle`), `--timeout N`, and release of the grab on Ctrl-C, SIGTERM or a crash.
