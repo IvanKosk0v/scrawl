@@ -1,0 +1,2 @@
+error: err_blank_app.toml line 5: app must be a window class or app_id (WM_CLASS on X11, app_id on Wayland, see README); an empty one matches nothing
+  5 | app = ""

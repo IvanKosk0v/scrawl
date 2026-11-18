@@ -6,6 +6,7 @@ use serde::{Deserialize, Deserializer};
 
 use crate::actions::key::KeyCombo;
 use crate::error::Error;
+use crate::window::AppId;
 
 const DIRECTIONS: [&str; 8] = ["U", "D", "L", "R", "UL", "UR", "DL", "DR"];
 
@@ -214,8 +215,37 @@ pub enum Feedback {
 pub struct Binding {
     /// Stroke that triggers the action.
     pub stroke: Stroke,
+    /// Only while this app has focus (default: any app).
+    #[serde(default)]
+    pub app: Option<AppMatch>,
     /// Action to perform.
     pub action: Action,
+}
+
+/// The app a binding or profile is limited to: a window class or app_id (`WM_CLASS` on X11,
+/// `app_id` on Wayland), matched whole and case-insensitively. Never blank.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct AppMatch(String);
+
+impl AppMatch {
+    /// True when `app` is this app (whole id, ignoring case).
+    pub fn matches(&self, app: &AppId) -> bool {
+        self.0 == app.as_str().to_lowercase()
+    }
+}
+
+impl<'de> Deserialize<'de> for AppMatch {
+    fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(d)?;
+        let id = s.trim();
+        if id.is_empty() {
+            return Err(serde::de::Error::custom(
+                "app must be a window class or app_id (WM_CLASS on X11, app_id on Wayland, see \
+                 README); an empty one matches nothing",
+            ));
+        }
+        Ok(AppMatch(id.to_lowercase()))
+    }
 }
 
 /// Parsed user configuration.
@@ -243,28 +273,75 @@ pub struct Config {
     /// Stroke bindings.
     #[serde(default)]
     pub binding: Vec<Binding>,
-    /// Per-device overrides; the first whose `device` matches wins.
+    /// Per-device overrides (the first `device`-only profile that matches wins) and per-app bindings.
     #[serde(default)]
     pub profile: Vec<Profile>,
 }
 
-/// Overrides for one kind of mouse, selected by device name.
+/// Overrides selected by device name and/or focused app. A profile with `app` holds bindings
+/// only: trigger, `min_stroke_px` and escape apply before the window is known.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(try_from = "RawProfile")]
 pub struct Profile {
     /// Case-insensitive substring of the device name this profile applies to (never blank: a blank
-    /// one would match every mouse).
-    #[serde(deserialize_with = "non_blank")]
-    pub device: String,
-    /// Trigger button for this device (default: the global one).
+    /// one would match every mouse). `None` only for an `app` profile, which then fits every mouse.
+    pub device: Option<String>,
+    /// App whose bindings these are; at least one of `device` and `app` is set.
+    pub app: Option<AppMatch>,
+    /// Trigger button for this device (default: the global one; never set with `app`).
     pub trigger: Option<Trigger>,
-    /// Minimum stroke length for this device (default: the global one).
+    /// Minimum stroke length for this device (default: the global one; never set with `app`).
     pub min_stroke_px: Option<u32>,
-    /// Escape chord for this device (default: the global one).
+    /// Escape chord for this device (default: the global one; never set with `app`).
     pub escape: Option<Escape>,
     /// Bindings that take precedence over the global ones for the same stroke.
-    #[serde(default)]
     pub binding: Vec<Binding>,
+}
+
+/// Profile as written in the file, before the cross-field checks.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawProfile {
+    #[serde(default, deserialize_with = "non_blank")]
+    device: Option<String>,
+    app: Option<AppMatch>,
+    trigger: Option<Trigger>,
+    min_stroke_px: Option<u32>,
+    escape: Option<Escape>,
+    #[serde(default)]
+    binding: Vec<Binding>,
+}
+
+impl TryFrom<RawProfile> for Profile {
+    type Error = String;
+
+    fn try_from(raw: RawProfile) -> Result<Self, String> {
+        if raw.device.is_none() && raw.app.is_none() {
+            return Err(
+                "a profile needs `device` (part of a mouse name, see `strokebind \
+                        list-devices`) or `app` (window class or app_id)"
+                    .into(),
+            );
+        }
+        if raw.app.is_some() {
+            if raw.trigger.is_some() || raw.min_stroke_px.is_some() || raw.escape.is_some() {
+                return Err("a profile with `app` cannot set trigger, min_stroke_px or escape \
+                            (they apply before the window is known); put them in a `device` profile"
+                    .into());
+            }
+            if raw.binding.iter().any(|b| b.app.is_some()) {
+                return Err("set `app` on the profile or on its bindings, not both".into());
+            }
+        }
+        Ok(Profile {
+            device: raw.device,
+            app: raw.app,
+            trigger: raw.trigger,
+            min_stroke_px: raw.min_stroke_px,
+            escape: raw.escape,
+            binding: raw.binding,
+        })
+    }
 }
 
 /// The settings that apply to one device: global values with its profile applied.
@@ -282,8 +359,29 @@ pub struct Resolved {
     pub freeze_pointer: bool,
     /// Click distance in live mode (always the global setting).
     pub click_slop_px: u32,
-    /// Profile bindings first, then the global ones for strokes the profile does not bind.
+    /// Every binding that can apply to this device, most specific first, each tagged with its
+    /// effective `app`: app-specific ones (device profile, then app profiles, then global), then
+    /// the rest (device profile, then global). Use [`Resolved::bindings_for`] to pick by app.
     pub bindings: Vec<Binding>,
+}
+
+impl Resolved {
+    /// The bindings in effect while `app` has focus (`None` = unknown: only bindings without
+    /// `app`), with at most one binding per stroke: the most specific one.
+    pub fn bindings_for(&self, app: Option<&AppId>) -> Vec<Binding> {
+        let mut out: Vec<Binding> = Vec::new();
+        for b in &self.bindings {
+            let fits = match (&b.app, app) {
+                (None, _) => true,
+                (Some(m), Some(a)) => m.matches(a),
+                (Some(_), None) => false,
+            };
+            if fits && !out.iter().any(|x| x.stroke == b.stroke) {
+                out.push(b.clone());
+            }
+        }
+        out
+    }
 }
 
 /// Default for `min_stroke_px`.
@@ -340,7 +438,10 @@ impl Config {
         }
         for (i, p) in self.profile.iter().enumerate() {
             if let Some(min) = p.min_stroke_px.filter(|&m| slop >= m) {
-                let place = format!(" in profile \"{}\"", p.device);
+                let place = format!(
+                    " in profile \"{}\"",
+                    p.device.as_deref().unwrap_or_default()
+                );
                 let line = key_line(src, Section::Profile(i), "min_stroke_px");
                 return Err(error(min, place, line));
             }
@@ -348,18 +449,53 @@ impl Config {
         Ok(())
     }
 
-    /// The settings for the device called `device_name`: the first profile whose `device` is a
-    /// case-insensitive substring of the name is applied over the global settings.
+    /// The settings for the device called `device_name`: the first profile without `app` whose
+    /// `device` is a case-insensitive substring of the name is applied over the global settings;
+    /// `app` profiles whose `device` fits (or is unset) contribute their bindings.
     pub fn resolve(&self, device_name: &str) -> Resolved {
         let name = device_name.to_lowercase();
-        let profile = self
+        let fits = |p: &Profile| {
+            p.device
+                .as_ref()
+                .is_none_or(|d| name.contains(&d.to_lowercase()))
+        };
+        let profile = self.profile.iter().find(|p| p.app.is_none() && fits(p));
+        let profile_bindings = profile.map_or(&[][..], |p| &p.binding[..]);
+        let app_profile_bindings = self
             .profile
             .iter()
-            .find(|p| name.contains(&p.device.to_lowercase()));
-        let mut bindings = profile.map_or_else(Vec::new, |p| p.binding.clone());
-        for b in &self.binding {
-            if !bindings.iter().any(|x| x.stroke == b.stroke) {
-                bindings.push(b.clone());
+            .filter(|p| p.app.is_some() && fits(p))
+            .flat_map(|p| {
+                p.binding.iter().map(|b| Binding {
+                    app: p.app.clone(),
+                    ..b.clone()
+                })
+            });
+        let with_app = |bs: &[Binding]| {
+            bs.iter()
+                .filter(|b| b.app.is_some())
+                .cloned()
+                .collect::<Vec<_>>()
+        };
+        let without_app = |bs: &[Binding]| {
+            bs.iter()
+                .filter(|b| b.app.is_none())
+                .cloned()
+                .collect::<Vec<_>>()
+        };
+        let ordered = with_app(profile_bindings)
+            .into_iter()
+            .chain(app_profile_bindings)
+            .chain(with_app(&self.binding))
+            .chain(without_app(profile_bindings))
+            .chain(without_app(&self.binding));
+        let mut bindings: Vec<Binding> = Vec::new();
+        for b in ordered {
+            if !bindings
+                .iter()
+                .any(|x| x.stroke == b.stroke && x.app == b.app)
+            {
+                bindings.push(b);
             }
         }
         Resolved {
@@ -414,7 +550,7 @@ fn key_line(src: &str, section: Section, key: &str) -> Option<usize> {
 }
 
 /// A string that is not empty or only whitespace (profile `device`).
-fn non_blank<'de, D: serde::Deserializer<'de>>(d: D) -> Result<String, D::Error> {
+fn non_blank<'de, D: serde::Deserializer<'de>>(d: D) -> Result<Option<String>, D::Error> {
     let s = String::deserialize(d)?;
     if s.trim().is_empty() {
         return Err(serde::de::Error::custom(
@@ -422,5 +558,5 @@ fn non_blank<'de, D: serde::Deserializer<'de>>(d: D) -> Result<String, D::Error>
              an empty one would match every mouse",
         ));
     }
-    Ok(s)
+    Ok(Some(s))
 }

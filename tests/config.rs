@@ -333,3 +333,210 @@ fn empty_profile_device_is_rejected_with_line() {
         assert!(msg.contains("device"), "message: {msg}");
     }
 }
+
+// ---- M5.2: per-app bindings and profiles ----
+
+use strokebind::window::AppId;
+
+const APPS: &str = r#"
+trigger = "right"
+
+[[binding]]
+stroke = "L"
+action = { key = "alt+left" }
+
+[[binding]]
+stroke = "L"
+app = "Firefox"
+action = { key = "ctrl+shift+tab" }
+
+[[profile]]
+device = "trackball"
+
+[[profile.binding]]
+stroke = "R"
+action = { key = "ctrl+w" }
+
+[[profile.binding]]
+stroke = "R"
+app = "kitty"
+action = { key = "ctrl+shift+w" }
+
+[[profile]]
+app = "org.gnome.Nautilus"
+
+[[profile.binding]]
+stroke = "U"
+action = { key = "alt+up" }
+
+[[profile]]
+app = "kitty"
+device = "trackball"
+
+[[profile.binding]]
+stroke = "R"
+action = { key = "ctrl+d" }
+
+[[profile.binding]]
+stroke = "D"
+action = { key = "ctrl+shift+d" }
+"#;
+
+#[allow(clippy::expect_used)] // test helper outside #[test] fns
+fn app(s: &str) -> AppId {
+    AppId::new(s).expect("non-blank")
+}
+
+/// (stroke, key) pairs that apply to `device` while `focused` has focus.
+fn keys(cfg: &Config, device: &str, focused: Option<&str>) -> Vec<(String, String)> {
+    let id = focused.map(app);
+    cfg.resolve(device)
+        .bindings_for(id.as_ref())
+        .into_iter()
+        .map(|b| match b.action {
+            Action::Key(k) => (b.stroke.as_str().to_string(), k),
+            Action::Run(argv) => (b.stroke.as_str().to_string(), argv.join(" ")),
+        })
+        .collect()
+}
+
+fn pairs(v: &[(&str, &str)]) -> Vec<(String, String)> {
+    v.iter()
+        .map(|(a, b)| (a.to_string(), b.to_string()))
+        .collect()
+}
+
+#[test]
+fn app_binding_applies_only_to_its_app_case_insensitively() {
+    let cfg = Config::parse(APPS).expect("valid");
+    assert_eq!(
+        keys(&cfg, "mouse", Some("firefox")),
+        pairs(&[("L", "ctrl+shift+tab")])
+    );
+    assert_eq!(
+        keys(&cfg, "mouse", Some("FIREFOX")),
+        pairs(&[("L", "ctrl+shift+tab")])
+    );
+    // A substring is not a match: app ids are compared whole.
+    assert_eq!(
+        keys(&cfg, "mouse", Some("firefox-esr")),
+        pairs(&[("L", "alt+left")])
+    );
+}
+
+#[test]
+fn unknown_or_absent_app_falls_back_to_global_bindings() {
+    let cfg = Config::parse(APPS).expect("valid");
+    assert_eq!(keys(&cfg, "mouse", None), pairs(&[("L", "alt+left")]));
+    assert_eq!(
+        keys(&cfg, "mouse", Some("gimp")),
+        pairs(&[("L", "alt+left")])
+    );
+}
+
+#[test]
+fn app_profile_without_device_applies_to_every_mouse() {
+    let cfg = Config::parse(APPS).expect("valid");
+    let want = pairs(&[("U", "alt+up"), ("L", "alt+left")]);
+    assert_eq!(keys(&cfg, "mouse", Some("org.gnome.nautilus")), want);
+    let want = pairs(&[("U", "alt+up"), ("R", "ctrl+w"), ("L", "alt+left")]);
+    assert_eq!(keys(&cfg, "trackball", Some("org.gnome.Nautilus")), want);
+}
+
+#[test]
+fn app_profile_with_device_needs_both_to_match() {
+    let cfg = Config::parse(APPS).expect("valid");
+    // Other mouse: the kitty+trackball profile does not apply.
+    assert_eq!(
+        keys(&cfg, "mouse", Some("kitty")),
+        pairs(&[("L", "alt+left")])
+    );
+    // Precedence for R on the trackball in kitty: device-profile app binding beats the app profile.
+    let want = pairs(&[
+        ("R", "ctrl+shift+w"),
+        ("D", "ctrl+shift+d"),
+        ("L", "alt+left"),
+    ]);
+    assert_eq!(keys(&cfg, "Kensington Trackball", Some("kitty")), want);
+}
+
+#[test]
+fn app_specific_bindings_rank_above_device_profile_ones() {
+    let src = r#"
+trigger = "right"
+[[binding]]
+stroke = "L"
+app = "kitty"
+action = { key = "a" }
+[[profile]]
+device = "trackball"
+[[profile.binding]]
+stroke = "L"
+action = { key = "b" }
+"#;
+    let cfg = Config::parse(src).expect("valid");
+    assert_eq!(keys(&cfg, "trackball", Some("kitty")), pairs(&[("L", "a")]));
+    assert_eq!(keys(&cfg, "trackball", None), pairs(&[("L", "b")]));
+}
+
+#[test]
+fn all_bindings_include_app_ones_so_the_keyboard_is_prepared() {
+    let src = "trigger = \"right\"\n[[profile]]\napp = \"kitty\"\n[[profile.binding]]\nstroke = \"L\"\naction = { key = \"a\" }\n";
+    let cfg = Config::parse(src).expect("valid");
+    let r = cfg.resolve("mouse");
+    assert_eq!(r.bindings.len(), 1);
+    assert!(r.bindings_for(None).is_empty());
+    assert_eq!(r.bindings_for(Some(&app("kitty"))).len(), 1);
+}
+
+#[test]
+fn configs_without_app_behave_as_before() {
+    let cfg = Config::parse(PROFILES).expect("valid");
+    let r = cfg.resolve("trackball");
+    assert_eq!(r.bindings_for(None), r.bindings);
+    assert_eq!(r.bindings_for(Some(&app("anything"))), r.bindings);
+}
+
+#[test]
+fn blank_app_is_rejected_with_line() {
+    for (src, want) in [
+        ("trigger = \"right\"\n[[binding]]\nstroke = \"L\"\napp = \" \"\naction = { key = \"a\" }\n", 4),
+        ("trigger = \"right\"\n\n[[profile]]\napp = \"\"\n", 4),
+    ] {
+        let (line, msg) = config_error(src);
+        assert_eq!(line, Some(want), "{src}");
+        assert!(msg.contains("app"), "message: {msg}");
+    }
+}
+
+#[test]
+fn profile_needs_device_or_app() {
+    let (line, msg) = config_error("trigger = \"right\"\n\n[[profile]]\n\n[[profile.binding]]\nstroke = \"L\"\naction = { key = \"a\" }\n");
+    assert_eq!(line, Some(3));
+    assert!(
+        msg.contains("device") && msg.contains("app"),
+        "message: {msg}"
+    );
+}
+
+#[test]
+fn app_profile_rejects_restart_only_settings() {
+    for key in [
+        "trigger = \"middle\"",
+        "min_stroke_px = 80",
+        "escape = \"left+right\"",
+    ] {
+        let src = format!("trigger = \"right\"\n\n[[profile]]\napp = \"kitty\"\n{key}\n");
+        let (line, msg) = config_error(&src);
+        assert_eq!(line, Some(3), "{key}");
+        assert!(msg.contains("app"), "message: {msg}");
+    }
+}
+
+#[test]
+fn app_on_both_profile_and_its_binding_is_rejected() {
+    let src = "trigger = \"right\"\n\n[[profile]]\napp = \"kitty\"\n[[profile.binding]]\nstroke = \"L\"\napp = \"kitty\"\naction = { key = \"a\" }\n";
+    let (line, msg) = config_error(src);
+    assert_eq!(line, Some(3));
+    assert!(msg.contains("app"), "message: {msg}");
+}

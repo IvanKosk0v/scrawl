@@ -68,6 +68,7 @@ mod tests {
     fn b(stroke: &str) -> Binding {
         Binding {
             stroke: stroke.parse::<Stroke>().expect("valid stroke"),
+            app: None,
             action: Action::Key(stroke.to_lowercase()),
         }
     }

@@ -184,7 +184,9 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
             Some(Err(e)) => eprintln!("config reload failed, keeping the previous one: {e}"),
             None => {}
         }
-        let action = current.as_ref().and_then(|r| select(&stroke, &r.bindings));
+        // M5.3 passes the focused app; until then only bindings without `app` apply.
+        let bindings = current.as_ref().map(|r| r.bindings_for(None));
+        let action = bindings.as_deref().and_then(|b| select(&stroke, b));
         if let Some(action) = action {
             if let Err(e) = actions.perform(action) {
                 eprintln!("action for {stroke} failed: {e}");

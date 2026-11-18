@@ -1,0 +1,2 @@
+error: err_app_profile_trigger.toml line 3: a profile with `app` cannot set trigger, min_stroke_px or escape (they apply before the window is known); put them in a `device` profile
+  3 | [[profile]]

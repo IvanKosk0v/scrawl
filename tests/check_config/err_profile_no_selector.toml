@@ -1,0 +1,4 @@
+trigger = "right"
+
+[[profile]]
+min_stroke_px = 60
