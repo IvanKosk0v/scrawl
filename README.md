@@ -17,7 +17,7 @@ Strokes and clicks work on every desktop, because strokebind reads the mouse thr
 | KDE Plasma (Wayland) | global bindings only | not available in 0.1 |
 | GNOME (Wayland) | global bindings only | not available in 0.1 |
 
-Real-session checks so far: KDE Plasma Wayland and X11 with bspwm. The Sway and Hyprland adapters are tested
+Real-session checks so far: KDE Plasma Wayland and X11 with bspwm (including per-app bindings). The Sway and Hyprland adapters are tested
 against recorded replies and a fake socket only; GNOME is untested. Details land in M6.0.
 
 ## Failsafes
