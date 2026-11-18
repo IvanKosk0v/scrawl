@@ -1,13 +1,13 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
 Current milestone: M5
-Current task: M5.8
+Current task: M5.9
 Branch: m5-adapters
-Last session: M5.7 done, handoff saved (2026-11-18)
+Last session: M5.8 done, handoff saved (2026-11-18)
 ## Handoff
-Done: M5.7 `sway::SwayAdapter` (i3-IPC GET_TREE over SWAYSOCK, 40 ms socket timeouts; pure `encode_message`/`parse_header`/`parse_focused_app`, fake-socket test); Sway arm of `window_adapter()` wired; serde_json added (P6).
-Next: M5.8 Hyprland adapter (IPC socket via HYPRLAND_INSTANCE_SIGNATURE, `activewindow` JSON parser tests with recorded JSON), replaces the Hyprland arm.
-Fragile: a hung lookup delays one trigger press by <= 50 ms, then lookups are skipped until it answers; KDE Wayland verified by user, Sway (adapter has only fake-socket tests)/Hyprland/GNOME untested; bspwm check of the X11 adapter pending (user wanted ~/strokebind-test.toml written; waiting on their terminal/browser WM_CLASS values); key-combo action not in the user's hardware list. Reload polled only on strokes. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
+Done: M5.8 `hyprland::HyprlandAdapter` (`j/activewindow` on `.socket.sock`, 40 ms timeouts; pure `socket_path`/`parse_active_window`, fake-socket test); Hyprland arm wired. All backends now have adapters.
+Next: M5.9 README support matrix (X11, Sway, Hyprland adapters; KDE+GNOME global-only; mark Sway/Hyprland/GNOME as untested on real sessions).
+Fragile: a hung lookup delays one trigger press by <= 50 ms, then lookups are skipped until it answers; KDE Wayland verified by user, Sway and Hyprland adapters have only fake-socket tests (real sessions untested)/GNOME untested; bspwm check of the X11 adapter pending (user wanted ~/strokebind-test.toml written; waiting on their terminal/browser WM_CLASS values); key-combo action not in the user's hardware list. Reload polled only on strokes. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
 
 ## Decisions
 - Base: Rust; deps limited to docs/ARCHITECTURE.md allowed list; evdev grab + uinput forwarding so it works on every compositor; Dual license MIT OR Apache-2.0; MSRV 1.85.1: lowest passing version found by `cargo msrv find --min 1.70` (bisect; older toolchains fail on a dependency needing edition 2024).
@@ -34,6 +34,7 @@ Fragile: a hung lookup delays one trigger press by <= 50 ms, then lookups are sk
 - M5.4: one thread per lookup (`thread::Builder`, spawn failure = None); timed-out receiver kept, later lookups None at once until it answers or dies; late answer discarded. Stderr line on timeout. Test hook `STROKEBIND_TEST_ADAPTER=hang` in main.rs (`NeverAnswers`, #[doc(hidden)]); uinput tests `run_*_fires_with_hung_adapter` (#[ignore]).
 - M5.5: `WAYLAND_DISPLAY` > `DISPLAY`; empty = unset; under Wayland `HYPRLAND_INSTANCE_SIGNATURE` checked before `SWAYSOCK`, both ignored without `WAYLAND_DISPLAY`; anything else = `Unsupported` (KDE/GNOME). M5.6: X11 app id = `WM_CLASS` class (instance if blank), failure = None. `DisplayServer` is the M7.1 overlay picker too.
 - M5.7: app id = focused node's `app_id`, else XWayland `window_properties.class`; focused non-window node (empty workspace) = None. Socket read/write timeout 40 ms each, reply capped 16 MiB, new connection per lookup.
+- M5.8: app id = `class` of `j/activewindow` (`{}`/`Invalid`/blank = None); socket `$XDG_RUNTIME_DIR/hypr/<sig>/.socket.sock` if it exists, else `/tmp/hypr/<sig>/.socket.sock`; no signature = GlobalOnly.
 - Manual verification (user, 2026-11-18): list-devices, record, run (pointer, clicks, right-click menu, strokes, notifications, timeout) on KDE Plasma Wayland behaved exactly as on X11 + bspwm. Use for M5.9/M6.0/M6.3 README matrix; Sway, Hyprland, GNOME still untested.
 - Stroke grammar: U,D,L,R,UL,UR,DL,DR joined by `-` (`L-U` = left then up). Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.
 

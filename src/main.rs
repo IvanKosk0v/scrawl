@@ -14,6 +14,7 @@ use strokebind::device::source::{button_code, EvdevSource};
 use strokebind::device::virtual_mouse::{MouseCaps, VirtualMouse};
 use strokebind::error::Error;
 use strokebind::focus::Focused;
+use strokebind::hyprland::{socket_path, HyprlandAdapter};
 use strokebind::passthrough::{Mode, Passthrough};
 use strokebind::reload::ConfigWatcher;
 use strokebind::stroke_loop::{run_events, LoopParams};
@@ -210,7 +211,7 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
 }
 
 /// The bounded window adapter for `run`, picked from the session environment; backends without an
-/// adapter yet (M5.8) use the global bindings. `STROKEBIND_TEST_ADAPTER=hang` is a test hook:
+/// adapter (KDE, GNOME) use the global bindings. `STROKEBIND_TEST_ADAPTER=hang` is a test hook:
 /// lookups never answer.
 fn window_adapter() -> Bounded {
     if std::env::var_os("STROKEBIND_TEST_ADAPTER").is_some_and(|v| v == "hang") {
@@ -222,6 +223,10 @@ fn window_adapter() -> Bounded {
             Some(socket) => Bounded::new(SwayAdapter::new(socket)),
             None => Bounded::new(GlobalOnly),
         },
-        WindowBackend::Hyprland | WindowBackend::Unsupported => Bounded::new(GlobalOnly),
+        WindowBackend::Hyprland => match socket_path(|k| std::env::var_os(k), |p| p.exists()) {
+            Some(socket) => Bounded::new(HyprlandAdapter::new(socket)),
+            None => Bounded::new(GlobalOnly),
+        },
+        WindowBackend::Unsupported => Bounded::new(GlobalOnly),
     }
 }
