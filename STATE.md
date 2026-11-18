@@ -7,8 +7,8 @@ Last session: M5.3 done (2026-11-18)
 
 ## Handoff
 Done: M5.3 `focus::Focused` wraps the engine, samples the adapter when a trigger press starts pending; `forward` passes the press-time app to `run`, which uses `bindings_for(app)`. `run` uses `GlobalOnly` until M5.4. M5.2 `app` config done.
-Next: M5.4 backend picker (WAYLAND_DISPLAY before DISPLAY), replaces `GlobalOnly` in main.rs.
-Fragile: adapter is called synchronously in the input loop at each trigger press, so M5.5-M5.7 need short IPC timeouts; no Wayland run yet (M6.0); key-combo action not in the user's hardware list. Reload polled only on strokes. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
+Next: M5.4 adapter timeout <= 50 ms (P7), then M5.5 backend picker replacing `GlobalOnly` in main.rs.
+Fragile: adapter is called synchronously in the input loop at each trigger press, until M5.4 bounds it (adapters M5.6-M5.8); no Wayland run yet (M6.0); key-combo action not in the user's hardware list. Reload polled only on strokes. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
 
 ## Decisions
 - Rust; deps limited to docs/ARCHITECTURE.md allowed list.
@@ -39,6 +39,7 @@ Fragile: adapter is called synchronously in the input loop at each trigger press
 - approved P6: M5 = 8 tasks (app config, run wiring at press, backend picker, X11/Sway/Hyprland adapters, README matrix; KDE+GNOME global-only for 0.1). Deps: serde_json new, x11rb extended to M5; no zbus.
 - M5.2: app match = whole id, case-insensitive (stored trimmed+lowercased). `[[profile]]` needs `device` or `app`; `app` profile = bindings only (trigger/min_stroke_px/escape rejected), fits every mouse unless `device` also set (both must match); `app` on an app profile's binding rejected. Precedence per stroke: device-profile app binding > app profiles (file order) > global app binding > device-profile binding > global. `Resolved.bindings` = all candidates (keyboard prepare), `bindings_for(None)` = no-app only. Profile errors via serde try_from point at the `[[profile]]` header.
 - M5.3: no new engine Output; `Passthrough::is_pending()` + `Focused` wrapper detect press (pending off->on), one adapter call per press (clicks too), none for motion/other buttons. Press app kept until the next press. `forward` callback = `(stroke, Option<AppId>)`.
+- approved P7: new M5.4 adapter timeout <= 50 ms (fallback = global, skip while a lookup hangs); old M5.4-M5.8 renumbered M5.5-M5.9.
 - Stroke grammar: U,D,L,R,UL,UR,DL,DR joined by `-` (`L-U` = left then up). Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.
 
 ## Proposals (numbered; awaiting user `/approve P<n>` or `/reject P<n>`)
