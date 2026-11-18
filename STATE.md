@@ -1,12 +1,12 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
-Current milestone: M5
-Current task: none (M5 complete; run /milestone)
-Branch: m5-adapters
-Last session: M5.9 done, handoff saved (2026-11-18)
+Current milestone: M6
+Current task: M6.0
+Branch: m6-packaging (not created yet; /next creates it from main)
+Last session: M5 merged into main (2026-11-18)
 ## Handoff
-Done: M5.9 README support matrix (X11/Sway/Hyprland per-app, KDE/GNOME global-only) + tests/readme.rs row checks.
-Next: /milestone to close M5.
+Done: M5 closed and merged (X11/Sway/Hyprland adapters, README support matrix).
+Next: M6.0 compositor verification, manual (needs the user or VMs): record + run on Sway, GNOME, KDE, Hyprland, X11; results into the README matrix.
 Fragile: a hung lookup delays one trigger press by <= 50 ms, then lookups are skipped until it answers; KDE Wayland verified by user, Sway and Hyprland adapters have only fake-socket tests (real sessions untested)/GNOME untested; key-combo action not in the user's hardware list. Reload polled only on strokes. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
 
 ## Decisions
