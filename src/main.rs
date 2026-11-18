@@ -18,6 +18,7 @@ use strokebind::passthrough::{Mode, Passthrough};
 use strokebind::reload::ConfigWatcher;
 use strokebind::stroke_loop::{run_events, LoopParams};
 use strokebind::window::{Bounded, GlobalOnly, NeverAnswers};
+use strokebind::x11::X11Adapter;
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
@@ -215,9 +216,9 @@ fn window_adapter() -> Bounded {
         return Bounded::new(NeverAnswers);
     }
     match window_backend(|k| std::env::var_os(k)) {
-        WindowBackend::X11 | WindowBackend::Sway | WindowBackend::Hyprland => {
+        WindowBackend::X11 => Bounded::new(X11Adapter),
+        WindowBackend::Sway | WindowBackend::Hyprland | WindowBackend::Unsupported => {
             Bounded::new(GlobalOnly)
         }
-        WindowBackend::Unsupported => Bounded::new(GlobalOnly),
     }
 }
