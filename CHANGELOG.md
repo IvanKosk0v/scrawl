@@ -3,7 +3,7 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
-- `run` now moves the pointer live while the trigger is held; a release within `click_slop_px` (default 6, must be less than `min_stroke_px`) of the press is a click, a recognized stroke runs its action, anything else is swallowed. `freeze_pointer = true` restores the previous frozen-pointer behaviour.
+- `run` now moves the pointer live while the trigger is held; a release within `click_slop_px` (default 6, must be less than every `min_stroke_px` unless `freeze_pointer = true`) of the press is a click, a recognized stroke runs its action, anything else is swallowed. `freeze_pointer = true` restores the previous frozen-pointer behaviour.
 - `feedback = "notify"` (default `"off"`): `run` shows each recognized stroke, or `<stroke>: no match`, as a desktop notification via `notify-send`.
 - `strokebind check-config FILE` validates a config: prints `OK` with binding/profile counts, or the error with its line number and the offending line quoted (exit 1).
 - `run` performs the bound action (key combo or command) for each recognized stroke; invalid key combos and empty `run` commands are rejected when the config loads.

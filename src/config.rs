@@ -317,23 +317,30 @@ impl Config {
         Ok(cfg)
     }
 
-    /// `click_slop_px` must stay below every effective `min_stroke_px`, or clicks would swallow strokes.
+    /// Live mode only: `click_slop_px` must stay below every effective `min_stroke_px`, or clicks
+    /// would swallow strokes. The error points at the profile's own `min_stroke_px` when a profile
+    /// is at fault, else at the top-level `click_slop_px` (or `min_stroke_px` when slop is default).
     fn check_slop(&self, src: &str) -> Result<(), Error> {
+        if self.freeze_pointer {
+            return Ok(());
+        }
         let slop = self.click_slop_px;
-        let global = std::iter::once((self.min_stroke_px, None));
-        let profiles = self
-            .profile
-            .iter()
-            .filter_map(|p| p.min_stroke_px.map(|m| (m, Some(p.device.as_str()))));
-        for (min, device) in global.chain(profiles) {
-            if slop >= min {
-                let place = device.map_or_else(String::new, |d| format!(" in profile \"{d}\""));
-                return Err(Error::Config {
-                    line: key_line(src, "click_slop_px").or_else(|| key_line(src, "min_stroke_px")),
-                    message: format!(
-                        "click_slop_px ({slop}) must be less than min_stroke_px ({min}){place}"
-                    ),
-                });
+        let error = |min: u32, place: String, line: Option<usize>| Error::Config {
+            line,
+            message: format!(
+                "click_slop_px ({slop}) must be less than min_stroke_px ({min}){place}"
+            ),
+        };
+        if slop >= self.min_stroke_px {
+            let line = key_line(src, Section::Top, "click_slop_px")
+                .or_else(|| key_line(src, Section::Top, "min_stroke_px"));
+            return Err(error(self.min_stroke_px, String::new(), line));
+        }
+        for (i, p) in self.profile.iter().enumerate() {
+            if let Some(min) = p.min_stroke_px.filter(|&m| slop >= m) {
+                let place = format!(" in profile \"{}\"", p.device);
+                let line = key_line(src, Section::Profile(i), "min_stroke_px");
+                return Err(error(min, place, line));
             }
         }
         Ok(())
@@ -369,13 +376,37 @@ impl Config {
     }
 }
 
-/// 1-based line of the first `key = ...` assignment in `src`.
-fn key_line(src: &str, key: &str) -> Option<usize> {
-    src.lines()
+/// Where [`key_line`] looks for a key.
+#[derive(Clone, Copy)]
+enum Section {
+    /// Top-level keys, before the first table header.
+    Top,
+    /// Keys of the n-th (0-based) `[[profile]]` table, up to its next header.
+    Profile(usize),
+}
+
+/// 1-based line of the first `key = ...` assignment in `section`; a best-effort text search for
+/// errors found after parsing (`None` if the layout is unusual).
+fn key_line(src: &str, section: Section, key: &str) -> Option<usize> {
+    let lines: Vec<&str> = src.lines().map(str::trim_start).collect();
+    let start = match section {
+        Section::Top => 0,
+        Section::Profile(n) => {
+            lines
+                .iter()
+                .enumerate()
+                .filter(|(_, l)| l.starts_with("[[profile]]"))
+                .nth(n)?
+                .0
+                + 1
+        }
+    };
+    lines[start..]
+        .iter()
+        .take_while(|l| !l.starts_with('['))
         .position(|l| {
-            l.trim_start()
-                .strip_prefix(key)
+            l.strip_prefix(key)
                 .is_some_and(|rest| rest.trim_start().starts_with('='))
         })
-        .map(|i| i + 1)
+        .map(|i| start + i + 1)
 }

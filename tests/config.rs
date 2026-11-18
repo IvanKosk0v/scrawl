@@ -290,11 +290,29 @@ fn slop_must_be_below_min_stroke_px_with_line() {
 #[test]
 fn slop_checked_against_profile_min_stroke_px() {
     let src = "trigger = \"right\"\n[[profile]]\ndevice = \"trackball\"\nmin_stroke_px = 5\n";
-    let (_, msg) = config_error(src);
+    let (line, msg) = config_error(src);
     assert_eq!(
         msg,
         "click_slop_px (6) must be less than min_stroke_px (5) in profile \"trackball\""
     );
+    assert_eq!(line, Some(4));
+}
+
+#[test]
+fn slop_error_points_at_the_offending_profile_not_global_keys() {
+    let src = "trigger = \"right\"\nmin_stroke_px = 40\nclick_slop_px = 8\n\n\
+               [[profile]]\ndevice = \"a\"\nmin_stroke_px = 20\n\n\
+               [[profile]]\ndevice = \"b\"\nmin_stroke_px = 8\n";
+    let (line, msg) = config_error(src);
+    assert!(msg.contains("profile \"b\""), "message: {msg}");
+    assert_eq!(line, Some(11));
+}
+
+#[test]
+fn slop_is_not_checked_when_the_pointer_is_frozen() {
+    let src = "trigger = \"right\"\nfreeze_pointer = true\nmin_stroke_px = 5\n";
+    let cfg = Config::parse(src).expect("slop is unused in frozen mode");
+    assert_eq!(cfg.min_stroke_px, 5);
 }
 
 #[test]

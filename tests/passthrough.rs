@@ -281,3 +281,114 @@ proptest! {
         prop_assert_eq!(live_feed(&reports), expected);
     }
 }
+
+#[test]
+fn frozen_mode_set_explicitly_matches_m3_3() {
+    let mut pt = engine().with_mode(Mode::Frozen);
+    let press = vec![scan(1), right(1)];
+    let release = vec![scan(1), right(0)];
+    assert_eq!(push_report(&mut pt, &press), vec![]);
+    assert_eq!(push_report(&mut pt, &[x(3)]), vec![], "motion is buffered");
+    assert_eq!(
+        push_report(&mut pt, &release),
+        vec![Out::Emit(press), Out::Emit(vec![x(3)]), Out::Emit(release)]
+    );
+}
+
+#[test]
+fn live_release_exactly_at_slop_is_a_click() {
+    let reports = vec![vec![right(1)], vec![x(6)], vec![right(0)]];
+    assert_eq!(
+        live_feed(&reports),
+        vec![
+            Out::Emit(vec![x(6)]),
+            Out::Emit(vec![right(1)]),
+            Out::Emit(vec![right(0)]),
+        ]
+    );
+}
+
+#[test]
+fn live_release_one_past_slop_is_swallowed() {
+    let reports = vec![vec![right(1)], vec![x(7)], vec![right(0)]];
+    assert_eq!(live_feed(&reports), vec![Out::Emit(vec![x(7)])]);
+}
+
+#[test]
+fn live_motion_in_the_release_report_counts_toward_the_slop() {
+    let reports = vec![vec![right(1)], vec![x(10), right(0)]];
+    assert_eq!(live_feed(&reports), vec![Out::Emit(vec![x(10)])]);
+}
+
+#[test]
+fn live_repeated_trigger_press_while_held_is_not_forwarded() {
+    let reports = vec![
+        vec![right(1)],
+        vec![x(2), scan(1), right(1)],
+        vec![right(2)],
+        vec![right(0)],
+    ];
+    assert_eq!(
+        live_feed(&reports),
+        vec![
+            Out::Emit(vec![x(2)]),
+            Out::Emit(vec![right(1)]),
+            Out::Emit(vec![right(0)]),
+        ]
+    );
+}
+
+#[test]
+fn live_saturated_motion_does_not_overflow() {
+    let mut reports = vec![vec![right(1)]];
+    reports.extend(std::iter::repeat_n(
+        vec![x(i32::MIN), rel(RelativeAxisCode::REL_Y, i32::MIN)],
+        3,
+    ));
+    reports.push(vec![right(0)]);
+    // Must not panic (debug builds check overflow); no click so far from the press.
+    let out = live_feed(&reports);
+    assert!(!out.contains(&Out::Emit(vec![right(1)])));
+}
+
+/// Reports with arbitrary non-trigger events and a well-formed trigger press/release sequence.
+fn reports_with_trigger() -> impl Strategy<Value = Vec<Vec<Ev>>> {
+    prop::collection::vec(
+        (
+            prop::collection::vec(non_trigger_event(), 0..3),
+            any::<bool>(),
+        ),
+        0..30,
+    )
+    .prop_map(|items| {
+        let mut down = false;
+        items
+            .into_iter()
+            .filter_map(|(mut r, toggle)| {
+                if toggle {
+                    down = !down;
+                    r.push(right(i32::from(down)));
+                }
+                (!r.is_empty()).then_some(r)
+            })
+            .collect()
+    })
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(256))]
+    #[test]
+    fn live_trigger_is_only_emitted_as_press_release_pairs(reports in reports_with_trigger()) {
+        let values: Vec<i32> = live_feed(&reports)
+            .into_iter()
+            .filter_map(|o| match o { Out::Emit(evs) => Some(evs), _ => None })
+            .flatten()
+            .filter(|&(t, c, _)| t == EventType::KEY.0 && c == KeyCode::BTN_RIGHT.0)
+            .map(|(_, _, v)| v)
+            .collect();
+        for (i, v) in values.iter().enumerate() {
+            prop_assert_eq!(*v, i32::from(i % 2 == 0), "trigger values {:?}", values);
+        }
+        prop_assert_eq!(values.len() % 2, 0, "unpaired trigger values {:?}", values);
+    }
+}

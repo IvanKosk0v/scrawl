@@ -176,12 +176,16 @@ impl Passthrough {
                 y: last.y.saturating_add(dy),
             };
             let (px, py) = (i64::from(p.x), i64::from(p.y));
-            pending.max_dist2 = pending.max_dist2.max(px * px + py * py);
+            // Each square is at most 2^62, so only the sum can overflow (both at i32::MIN).
+            pending.max_dist2 = pending.max_dist2.max((px * px).saturating_add(py * py));
             pending.points.push(p);
         }
         if let Mode::Live { click_slop_px } = self.mode {
-            if trigger != Some(0) {
-                return vec![Output::Emit(report)];
+            match trigger {
+                Some(0) => {}
+                // A repeated press or autorepeat while held: forwarding it would unpair the withheld press.
+                Some(_) => return emit_nonempty(split_trigger(report, self.trigger).1),
+                None => return vec![Output::Emit(report)],
             }
             let Some(done) = self.pending.take() else {
                 return Vec::new();
