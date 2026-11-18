@@ -252,7 +252,9 @@ pub struct Config {
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Profile {
-    /// Case-insensitive substring of the device name this profile applies to.
+    /// Case-insensitive substring of the device name this profile applies to (never blank: a blank
+    /// one would match every mouse).
+    #[serde(deserialize_with = "non_blank")]
     pub device: String,
     /// Trigger button for this device (default: the global one).
     pub trigger: Option<Trigger>,
@@ -409,4 +411,16 @@ fn key_line(src: &str, section: Section, key: &str) -> Option<usize> {
                 .is_some_and(|rest| rest.trim_start().starts_with('='))
         })
         .map(|i| start + i + 1)
+}
+
+/// A string that is not empty or only whitespace (profile `device`).
+fn non_blank<'de, D: serde::Deserializer<'de>>(d: D) -> Result<String, D::Error> {
+    let s = String::deserialize(d)?;
+    if s.trim().is_empty() {
+        return Err(serde::de::Error::custom(
+            "profile device must name part of a mouse name (see `strokebind list-devices`); \
+             an empty one would match every mouse",
+        ));
+    }
+    Ok(s)
 }

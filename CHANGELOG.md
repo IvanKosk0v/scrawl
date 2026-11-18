@@ -3,6 +3,7 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+- `run` creates the virtual keyboard at startup (and after a reload) when a binding uses `key`, so the first key action is not lost; a profile with an empty `device` is rejected.
 - `run` now moves the pointer live while the trigger is held; a release within `click_slop_px` (default 6, must be less than every `min_stroke_px` unless `freeze_pointer = true`) of the press is a click, a recognized stroke runs its action, anything else is swallowed. `freeze_pointer = true` restores the previous frozen-pointer behaviour.
 - `feedback = "notify"` (default `"off"`): `run` shows each recognized stroke, or `<stroke>: no match`, as a desktop notification via `notify-send`.
 - `strokebind check-config FILE` validates a config: prints `OK` with binding/profile counts, or the error with its line number and the offending line quoted (exit 1).

@@ -148,6 +148,10 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
             }
         });
     let mut actions = Actions::new();
+    // Create the keyboard now so the compositor has opened it before the first key action.
+    if let Some(r) = current.as_ref() {
+        actions.prepare(&r.bindings)?;
+    }
     eprintln!("grabbed {}; hold {} to exit", path.display(), escape);
     forward(&mut grab, &mut out, engine, |stroke| {
         println!("{stroke}");
@@ -170,6 +174,9 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
                              change only after a restart"
                         );
                     }
+                }
+                if let Err(e) = actions.prepare(&new.bindings) {
+                    eprintln!("cannot create the virtual keyboard: {e}");
                 }
                 current = Some(new);
                 eprintln!("config reloaded");

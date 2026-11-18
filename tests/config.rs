@@ -323,3 +323,13 @@ fn resolve_carries_live_settings() {
     assert!(r.freeze_pointer);
     assert_eq!(r.click_slop_px, 4);
 }
+
+#[test]
+fn empty_profile_device_is_rejected_with_line() {
+    for device in ["\"\"", "\"  \""] {
+        let src = format!("trigger = \"right\"\n\n[[profile]]\ndevice = {device}\n");
+        let (line, msg) = config_error(&src);
+        assert_eq!(line, Some(4), "device = {device}");
+        assert!(msg.contains("device"), "message: {msg}");
+    }
+}

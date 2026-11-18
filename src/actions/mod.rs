@@ -17,7 +17,14 @@ pub fn select<'a>(stroke: &str, bindings: &'a [Binding]) -> Option<&'a Action> {
     }
 }
 
-/// Performs actions. The virtual keyboard is created on the first key action.
+/// True when some binding emits a key combo, so a virtual keyboard is required.
+pub fn needs_keyboard(bindings: &[Binding]) -> bool {
+    bindings.iter().any(|b| matches!(b.action, Action::Key(_)))
+}
+
+/// Performs actions. Call [`Actions::prepare`] at startup and after each reload: a freshly created
+/// uinput keyboard is not yet opened by the compositor, so keys sent right away are lost. A key
+/// action without a prepared keyboard still creates one on the spot.
 #[derive(Debug, Default)]
 pub struct Actions {
     keyboard: Option<VirtualKeyboard>,
@@ -27,6 +34,14 @@ impl Actions {
     /// New runner; no device is created yet.
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Create the virtual keyboard now if `bindings` need one and it does not exist yet.
+    pub fn prepare(&mut self, bindings: &[Binding]) -> Result<(), Error> {
+        if self.keyboard.is_none() && needs_keyboard(bindings) {
+            self.keyboard = Some(VirtualKeyboard::create()?);
+        }
+        Ok(())
     }
 
     /// Emit the key combo or start the command.
@@ -60,6 +75,14 @@ mod tests {
         )
         .map(|c| c.binding)
         .unwrap_or_default()
+    }
+
+    #[test]
+    fn keyboard_is_needed_only_for_key_bindings() {
+        let b = bindings();
+        assert!(needs_keyboard(&b));
+        assert!(!needs_keyboard(&b[1..]), "run-only bindings");
+        assert!(!needs_keyboard(&[]));
     }
 
     #[test]
