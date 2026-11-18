@@ -39,7 +39,7 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 - [x] M5.2 Config `app = "<WM_CLASS or app_id>"` on bindings and profiles; case-insensitive match, global fallback. Acceptance: parse/match tests; check-config validation with golden tests. (approved P6)
 - [x] M5.3 Wire WindowAdapter into `run`; active window sampled at trigger press, not release. Acceptance: mock-adapter test proving press-time sampling and global fallback.
 - [x] M5.4 Adapter timeout: every `active_window` lookup bounded to <= 50 ms; timeout = None = global bindings; while a hung lookup is outstanding, later presses get None at once (no thread pile-up). std only. Acceptance: never-answering adapter test: press-to-output latency <= ~50 ms and events still forwarded, escape chord still yields Escape (pure `Focused` tests); `run --timeout 1` still exits (#[ignore] uinput test, test-only hook injects the hung adapter). (approved P7)
-- [ ] M5.5 Backend picker: WAYLAND_DISPLAY checked before DISPLAY (XWayland sets both); shared with M7.1 (P4). Acceptance: selection tests incl. both set => Wayland.
+- [x] M5.5 Backend picker: WAYLAND_DISPLAY checked before DISPLAY (XWayland sets both); shared with M7.1 (P4). Acceptance: selection tests incl. both set => Wayland.
 - [ ] M5.6 X11 adapter via EWMH `_NET_ACTIVE_WINDOW` + `WM_CLASS` (x11rb). Acceptance: tests of property parsing; manual check on bspwm.
 - [ ] M5.7 Sway adapter (IPC socket). Acceptance: parser tests with recorded JSON.
 - [ ] M5.8 Hyprland adapter (IPC socket). Acceptance: parser tests with recorded JSON.

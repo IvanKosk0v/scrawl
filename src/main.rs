@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use clap::Parser;
 use strokebind::actions::{command, feedback, select, Actions};
+use strokebind::backend::{window_backend, WindowBackend};
 use strokebind::check::check;
 use strokebind::cli::{CheckArgs, Cli, Command, RecordArgs, RunArgs};
 use strokebind::config::{Config, Resolved, DEFAULT_CLICK_SLOP_PX};
@@ -206,11 +207,17 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// The bounded window adapter for `run`. M5.5 picks the real backend; until then every stroke
-/// gets the global bindings. `STROKEBIND_TEST_ADAPTER=hang` is a test hook: lookups never answer.
+/// The bounded window adapter for `run`, picked from the session environment; backends without an
+/// adapter yet (M5.6-M5.8) use the global bindings. `STROKEBIND_TEST_ADAPTER=hang` is a test hook:
+/// lookups never answer.
 fn window_adapter() -> Bounded {
     if std::env::var_os("STROKEBIND_TEST_ADAPTER").is_some_and(|v| v == "hang") {
         return Bounded::new(NeverAnswers);
     }
-    Bounded::new(GlobalOnly)
+    match window_backend(|k| std::env::var_os(k)) {
+        WindowBackend::X11 | WindowBackend::Sway | WindowBackend::Hyprland => {
+            Bounded::new(GlobalOnly)
+        }
+        WindowBackend::Unsupported => Bounded::new(GlobalOnly),
+    }
 }

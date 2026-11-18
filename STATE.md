@@ -1,13 +1,13 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
 Current milestone: M5
-Current task: M5.5
+Current task: M5.6
 Branch: m5-adapters
-Last session: M5.4 done (2026-11-18)
+Last session: M5.5 done (2026-11-18)
 
 ## Handoff
-Done: M5.4 `window::Bounded` caps each lookup at `ADAPTER_TIMEOUT` (50 ms) on a worker thread; `run` uses `Bounded::new(GlobalOnly)`. M5.3 press-time sampling (`focus::Focused`), M5.2 `app` config.
-Next: M5.5 backend picker (WAYLAND_DISPLAY before DISPLAY), plugged into `window_adapter()` in main.rs.
+Done: M5.5 `backend::{display_server, window_backend}` (pure, env closure); `window_adapter()` in main.rs matches the backend, all arms still `GlobalOnly`. M5.4 `Bounded` 50 ms cap, M5.3 press sampling, M5.2 `app` config.
+Next: M5.6 X11 adapter (x11rb, EWMH `_NET_ACTIVE_WINDOW` + `WM_CLASS`), replaces the X11 arm in `window_adapter()`.
 Fragile: a hung lookup delays one trigger press by <= 50 ms, then lookups are skipped until it answers; no Wayland run yet (M6.0); key-combo action not in the user's hardware list. Reload polled only on strokes. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
 
 ## Decisions
@@ -41,6 +41,7 @@ Fragile: a hung lookup delays one trigger press by <= 50 ms, then lookups are sk
 - M5.3: no new engine Output; `Passthrough::is_pending()` + `Focused` wrapper detect press (pending off->on), one adapter call per press (clicks too), none for motion/other buttons. Press app kept until the next press. `forward` callback = `(stroke, Option<AppId>)`.
 - approved P7: new M5.4 adapter timeout <= 50 ms (fallback = global, skip while a lookup hangs); old M5.4-M5.8 renumbered M5.5-M5.9.
 - M5.4: one thread per lookup (`thread::Builder`, spawn failure = None); timed-out receiver kept, later lookups None at once until it answers or dies; late answer discarded. Stderr line on timeout. Test hook `STROKEBIND_TEST_ADAPTER=hang` in main.rs (`NeverAnswers`, #[doc(hidden)]); uinput tests `run_*_fires_with_hung_adapter` (#[ignore]).
+- M5.5: `WAYLAND_DISPLAY` > `DISPLAY`; empty = unset; under Wayland `HYPRLAND_INSTANCE_SIGNATURE` checked before `SWAYSOCK`, both ignored without `WAYLAND_DISPLAY`; anything else = `Unsupported` (KDE/GNOME). `DisplayServer` is the M7.1 overlay picker too.
 - Stroke grammar: U,D,L,R,UL,UR,DL,DR joined by `-` (`L-U` = left then up). Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.
 
 ## Proposals (numbered; awaiting user `/approve P<n>` or `/reject P<n>`)
