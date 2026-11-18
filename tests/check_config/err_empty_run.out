@@ -1,0 +1,2 @@
+error: err_empty_run.toml line 5: run action needs a program, e.g. run = ["notify-send", "hello"]
+  5 | action = { run = [] }

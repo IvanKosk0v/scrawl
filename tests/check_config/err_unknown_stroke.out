@@ -1,0 +1,2 @@
+error: err_unknown_stroke.toml line 4: unknown stroke `L-Q` (expected directions U, D, L, R, UL, UR, DL, DR joined by `-`)
+  4 | stroke = "L-Q"

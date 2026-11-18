@@ -38,6 +38,13 @@ pub struct RunArgs {
     pub timeout: Option<u64>,
 }
 
+/// Options of `check-config`.
+#[derive(Debug, Clone, Args)]
+pub struct CheckArgs {
+    /// Config file to validate.
+    pub file: PathBuf,
+}
+
 /// Available subcommands.
 #[derive(Debug, Clone, Subcommand)]
 pub enum Command {
@@ -46,20 +53,8 @@ pub enum Command {
     /// Grab the mouse, forward it to a virtual mouse and print recognized strokes. Holding the escape chord
     /// (default left+right+middle) exits.
     Run(RunArgs),
-    /// Validate the configuration file.
-    CheckConfig,
+    /// Validate a config file; errors name the line and quote it.
+    CheckConfig(CheckArgs),
     /// List available mouse devices.
     ListDevices,
-}
-
-impl Command {
-    /// Name used in "not implemented" messages.
-    pub fn name(&self) -> &'static str {
-        match self {
-            Command::Record(_) => "record",
-            Command::Run(_) => "run",
-            Command::CheckConfig => "check-config",
-            Command::ListDevices => "list-devices",
-        }
-    }
 }

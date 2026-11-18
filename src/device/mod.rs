@@ -4,6 +4,7 @@ pub mod event;
 pub mod forward;
 pub mod grab;
 pub mod source;
+pub mod virtual_keyboard;
 pub mod virtual_mouse;
 
 pub use event::InputEvent;

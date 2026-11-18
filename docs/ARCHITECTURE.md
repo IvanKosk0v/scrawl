@@ -25,6 +25,7 @@ Per-app profiles are optional adapters that only read the active window; failure
 
 ## Allowed dependencies (anything else needs user approval via STATE.md Proposals)
 evdev, clap (derive), serde, toml, thiserror, anyhow, notify (hot reload), signal-hook, log + env_logger.
+Overlay (M7 only, approved P1): x11rb (shape + xfixes), smithay-client-toolkit, tiny-skia.
 Dev: tempfile, proptest.
 
 ## Config sketch (~/.config/strokebind/config.toml)

@@ -10,9 +10,6 @@ pub enum Error {
     /// The requested feature is not available yet.
     #[error("unsupported: {0}")]
     Unsupported(&'static str),
-    /// The subcommand is a stub that is not implemented yet.
-    #[error("{0}: not implemented")]
-    NotImplemented(&'static str),
     /// A device node exists but this user may not read it.
     #[error(
         "permission denied opening {}: add your user to the `input` group and log in again, \
@@ -39,6 +36,20 @@ pub enum Error {
         device: String,
         /// Missing buttons joined by `, `.
         missing: String,
+    },
+    /// A run-command action has no program.
+    #[error("run action needs a program, e.g. run = [\"notify-send\", \"hello\"]")]
+    EmptyCommand,
+    /// A key action holds an invalid combo (config validation normally rejects it first).
+    #[error("invalid key combo: {0}")]
+    KeyCombo(String),
+    /// A run-command action could not be started.
+    #[error("cannot run `{program}`: {source}")]
+    Spawn {
+        /// The program (argv[0]).
+        program: String,
+        /// Underlying error.
+        source: std::io::Error,
     },
     /// Installing the SIGINT/SIGTERM failsafe failed.
     #[error("cannot install signal handlers: {0}")]

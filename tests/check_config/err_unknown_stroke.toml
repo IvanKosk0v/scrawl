@@ -1,0 +1,5 @@
+trigger = "right"
+
+[[binding]]
+stroke = "L-Q"
+action = { key = "alt+left" }

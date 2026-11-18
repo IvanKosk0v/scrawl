@@ -1,0 +1,5 @@
+trigger = "right"
+
+[[binding]]
+stroke = "L"
+action = { run = [] }

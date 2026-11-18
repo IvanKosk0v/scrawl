@@ -1,0 +1,2 @@
+error: err_bad_escape.toml line 2: escape `left+left` needs at least two distinct buttons, e.g. `left+right+middle`
+  2 | escape = "left+left"

@@ -1,0 +1,19 @@
+trigger = "right"
+min_stroke_px = 50
+escape = "left+right"
+
+[[binding]]
+stroke = "L"
+action = { key = "alt+left" }
+
+[[binding]]
+stroke = "DR"
+action = { run = ["notify-send", "hello"] }
+
+[[profile]]
+device = "trackball"
+trigger = "middle"
+
+[[profile.binding]]
+stroke = "L"
+action = { key = "ctrl+w" }

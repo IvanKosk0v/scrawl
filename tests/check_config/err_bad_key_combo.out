@@ -1,0 +1,2 @@
+error: err_bad_key_combo.toml line 5: unknown key `banana` in `alt+banana` (e.g. ctrl, shift, alt, super, a, 1, f5, left, enter)
+  5 | action = { key = "alt+banana" }
