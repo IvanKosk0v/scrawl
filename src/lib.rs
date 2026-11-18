@@ -12,6 +12,7 @@ pub mod passthrough;
 pub mod recognizer;
 pub mod reload;
 pub mod stroke_loop;
+pub mod sway;
 pub mod sys;
 pub mod window;
 pub mod x11;

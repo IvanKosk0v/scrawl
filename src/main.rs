@@ -17,6 +17,7 @@ use strokebind::focus::Focused;
 use strokebind::passthrough::{Mode, Passthrough};
 use strokebind::reload::ConfigWatcher;
 use strokebind::stroke_loop::{run_events, LoopParams};
+use strokebind::sway::SwayAdapter;
 use strokebind::window::{Bounded, GlobalOnly, NeverAnswers};
 use strokebind::x11::X11Adapter;
 
@@ -209,7 +210,7 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
 }
 
 /// The bounded window adapter for `run`, picked from the session environment; backends without an
-/// adapter yet (M5.6-M5.8) use the global bindings. `STROKEBIND_TEST_ADAPTER=hang` is a test hook:
+/// adapter yet (M5.8) use the global bindings. `STROKEBIND_TEST_ADAPTER=hang` is a test hook:
 /// lookups never answer.
 fn window_adapter() -> Bounded {
     if std::env::var_os("STROKEBIND_TEST_ADAPTER").is_some_and(|v| v == "hang") {
@@ -217,8 +218,10 @@ fn window_adapter() -> Bounded {
     }
     match window_backend(|k| std::env::var_os(k)) {
         WindowBackend::X11 => Bounded::new(X11Adapter),
-        WindowBackend::Sway | WindowBackend::Hyprland | WindowBackend::Unsupported => {
-            Bounded::new(GlobalOnly)
-        }
+        WindowBackend::Sway => match std::env::var_os("SWAYSOCK") {
+            Some(socket) => Bounded::new(SwayAdapter::new(socket)),
+            None => Bounded::new(GlobalOnly),
+        },
+        WindowBackend::Hyprland | WindowBackend::Unsupported => Bounded::new(GlobalOnly),
     }
 }
