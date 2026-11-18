@@ -3,6 +3,7 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+- `strokebind check-config FILE` validates a config: prints `OK` with binding/profile counts, or the error with its line number and the offending line quoted (exit 1).
 - `run` performs the bound action (key combo or command) for each recognized stroke; invalid key combos and empty `run` commands are rejected when the config loads.
 - `[[profile]]` sections (`device = "<name substring>"`, optional `trigger`, `min_stroke_px`, `escape`, `[[profile.binding]]`) override settings per mouse.
 - `run --config FILE` reloads bindings when the file changes (a broken edit is reported and ignored); trigger, `min_stroke_px` and `escape` need a restart.

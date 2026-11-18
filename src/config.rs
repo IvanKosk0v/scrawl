@@ -265,13 +265,19 @@ fn default_min_stroke_px() -> u32 {
 }
 
 impl Config {
-    /// Parse and validate a TOML config; errors carry the 1-based line when known.
+    /// Parse and validate a TOML config; errors carry the 1-based line when known. A missing
+    /// top-level field has no line (toml blames the root table, which starts at offset 0).
     pub fn parse(src: &str) -> Result<Self, Error> {
-        toml::from_str(src).map_err(|e| Error::Config {
-            line: e
-                .span()
-                .map(|s| src[..s.start].bytes().filter(|&b| b == b'\n').count() + 1),
-            message: e.message().to_owned(),
+        toml::from_str(src).map_err(|e| {
+            let message = e.message().to_owned();
+            let root_missing = message.starts_with("missing field");
+            Error::Config {
+                line: e
+                    .span()
+                    .filter(|s| !(root_missing && s.start == 0))
+                    .map(|s| src[..s.start].bytes().filter(|&b| b == b'\n').count() + 1),
+                message,
+            }
         })
     }
 

@@ -16,13 +16,13 @@ fn help_lists_subcommands() {
 }
 
 #[test]
-fn stub_subcommand_reports_not_implemented() {
+fn check_config_requires_a_file() {
     let out = Command::new(env!("CARGO_BIN_EXE_strokebind"))
         .arg("check-config")
         .output()
         .expect("run strokebind");
     assert!(!out.status.success());
-    assert!(String::from_utf8_lossy(&out.stderr).contains("not implemented"));
+    assert!(String::from_utf8_lossy(&out.stderr).contains("<FILE>"));
 }
 
 #[test]

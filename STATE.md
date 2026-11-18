@@ -1,14 +1,14 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
 Current milestone: M4
-Current task: M4.4
+Current task: M4.5
 Branch: m4-actions
-Last session: M4.3 done
+Last session: M4.4 done
 
 ## Handoff
-Done: M4.3 config validates actions at load, `[[profile]]` + `Config::resolve`, `reload::ConfigWatcher`, `actions::{select,Actions}` wired into `run` (not run on real hardware).
-Next: M4.4 `check-config` with clear errors + golden-output tests (it is still a stub; reuse Config::parse and resolve).
-Fragile: frozen pointer until M4.6. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
+Done: M4.4 `check-config FILE` (`src/check.rs`, golden fixtures in `tests/check_config/`); M4.3 run-wiring untested on real hardware (M6.0).
+Next: M4.5 `feedback = "notify"` via the M4.2 run-command path; fake-runner argv test.
+Fragile: run-wiring + hot reload (polled only when a stroke arrives) never exercised on a real mouse; frozen pointer until M4.6. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
 
 ## Decisions
 - Rust; deps limited to docs/ARCHITECTURE.md allowed list.
@@ -16,10 +16,7 @@ Fragile: frozen pointer until M4.6. Compensating release after SYN_DROPPED arriv
 - Dual license MIT OR Apache-2.0.
 - MSRV 1.85.1: lowest passing version found by `cargo msrv find --min 1.70` (bisect; older toolchains fail on a dependency needing edition 2024).
 - Review of M0: fixed unknown-field typos (deny_unknown_fields). Accepted: gates.rs checks strings only; CI msrv+deny jobs are the real verification.
-- M1.1: jitter filter = skip points within min_len of last accepted point; per-step segments, no merging; y grows down, ties snap via atan2 round.
-- M1.2: noise runs dropped after merging, then neighbours re-merged (R,tiny U,R -> R); no stroke = None.
-- M1.3: tolerance = max total 45-degree steps (circular) across equal-length strokes; ties for best distance (incl. duplicate bindings) = Ambiguous, no action.
-- M1.4: scaling/jitter proptests use exact-grid paths (20px steps, jitter +-2) so expectations are deterministic.
+- M1: jitter filter skips points < min_len from last accepted; noise runs dropped then neighbours re-merged; tolerance = max total 45-degree steps, ties (incl. duplicate bindings) = Ambiguous; proptests use exact-grid paths (20px steps, jitter +-2).
 - M2.1: opens nodes with evdev Device::open (read-only, no grab); unreadable-only => PermissionDenied error with input-group/udev hint; other open failures skipped. Removed device::MODULE placeholder; layout test now references list_mice_in.
 - M2.2: no EventSource trait; the loop takes any iterator of Result<InputEvent>. Unfinished stroke at end of stream is discarded; LoopParams::from_config: min_run = min_stroke_px, min_step = min_stroke_px/4.
 - M2.3: ReportMapper folds each SYN_REPORT into one Motion (first) then button changes; ignores autorepeat and non-trigger buttons. record defaults: first mouse, Right trigger, 40px.
@@ -34,6 +31,7 @@ Fragile: frozen pointer until M4.6. Compensating release after SYN_DROPPED arriv
 - M4.2: no shell (argv direct; opt in via ["sh","-c",..]); env allowlist HOME USER LOGNAME SHELL PATH LANG LANGUAGE TZ DISPLAY XAUTHORITY WAYLAND_DISPLAY DBUS_SESSION_BUS_ADDRESS DESKTOP_SESSION SWAYSOCK I3SOCK HYPRLAND_INSTANCE_SIGNATURE + LC_* + XDG_*; PATH default if missing; cwd $HOME or /; stdin+stdout null, stderr inherited; reaped by a thread (no unsafe/setsid).
 - approved P1: stroke trail overlay added as post-0.1 milestone M7 (5 tasks, branch m7-overlay); deps x11rb, smithay-client-toolkit, tiny-skia allowed for M7 only.
 - M4.3: profile = `[[profile]] device = "<name substring, case-insensitive>"`, first match wins, `[[profile.binding]]` beat global ones per stroke. Hot reload (notify 8, parent dir watched, polled when a stroke arrives) swaps bindings only; trigger/min_stroke_px/escape need a restart (message printed). Match tolerance fixed at 0. Key combos / empty run argv rejected at load via serde try_from.
+- M4.4: `check-config <FILE>` positional (no default path yet). OK -> stdout `<path>: OK (N bindings, M profiles)` exit 0; error -> stderr `error: <path> line L: msg` + `  L | <line>`, exit 1 (process::exit, no anyhow prefix). Multi-line toml messages joined with `; `. Missing top-level field reports no line (toml blames root table at offset 0). Goldens: `ok_*`/`err_*.toml` + `.out`. Removed dead `Error::NotImplemented`/`Command::name`.
 - approved P4: M7.1 backend picker checks WAYLAND_DISPLAY before DISPLAY (XWayland sets both); selection test added to acceptance.
 - approved P5: M6.0 compositor verification (record/run on Sway, GNOME, KDE, Hyprland, X11; results in README support matrix) added before M6.1.
 - Stroke grammar: 8 tokens U,D,L,R,UL,UR,DL,DR joined by `-` (so `DR` = down-right diagonal, `L-U` = left then up).

@@ -1,6 +1,7 @@
 //! strokebind: mouse-stroke gestures on Linux via evdev/uinput.
 
 pub mod actions;
+pub mod check;
 pub mod cli;
 pub mod config;
 pub mod device;

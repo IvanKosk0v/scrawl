@@ -10,9 +10,6 @@ pub enum Error {
     /// The requested feature is not available yet.
     #[error("unsupported: {0}")]
     Unsupported(&'static str),
-    /// The subcommand is a stub that is not implemented yet.
-    #[error("{0}: not implemented")]
-    NotImplemented(&'static str),
     /// A device node exists but this user may not read it.
     #[error(
         "permission denied opening {}: add your user to the `input` group and log in again, \

@@ -59,8 +59,10 @@ fn missing_field_reports_line_and_name() {
 
 #[test]
 fn missing_trigger_is_an_error() {
-    let (_, msg) = config_error("min_stroke_px = 40\n");
+    let (line, msg) = config_error("min_stroke_px = 40\n");
     assert!(msg.contains("trigger"), "message: {msg}");
+    // The whole document is at fault, not its first line.
+    assert_eq!(line, None);
 }
 
 #[test]

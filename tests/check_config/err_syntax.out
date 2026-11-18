@@ -1,0 +1,2 @@
+error: err_syntax.toml line 2: invalid string; expected `"`, `'`
+  2 | min_stroke_px = = 3

@@ -3,7 +3,8 @@ use std::time::Duration;
 
 use clap::Parser;
 use strokebind::actions::{select, Actions};
-use strokebind::cli::{Cli, Command, RecordArgs, RunArgs};
+use strokebind::check::check;
+use strokebind::cli::{CheckArgs, Cli, Command, RecordArgs, RunArgs};
 use strokebind::config::Config;
 use strokebind::device;
 use strokebind::device::forward::forward;
@@ -30,7 +31,33 @@ fn main() -> anyhow::Result<()> {
         }
         Command::Record(args) => record(&args),
         Command::Run(args) => run(&args),
-        other => Err(Error::NotImplemented(other.name()).into()),
+        Command::CheckConfig(args) => check_config(&args),
+    }
+}
+
+/// Validate a config file: the result on stdout (exit 0) or the error on stderr (exit 1).
+fn check_config(args: &CheckArgs) -> anyhow::Result<()> {
+    let label = args.file.display().to_string();
+    let report = match std::fs::read_to_string(&args.file) {
+        Ok(src) => check(&label, &src),
+        Err(source) => Err(format!(
+            "error: {}\n",
+            Error::Io {
+                path: args.file.clone(),
+                source,
+            }
+        )),
+    };
+    match report {
+        Ok(text) => {
+            print!("{text}");
+            Ok(())
+        }
+        Err(text) => {
+            eprint!("{text}");
+            // Nothing is grabbed or open here; exit without anyhow's `Error:` wrapper.
+            std::process::exit(1);
+        }
     }
 }
 
