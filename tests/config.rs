@@ -1,6 +1,6 @@
 //! M0.3: config parsing and validation.
 
-use strokebind::config::{Action, Config, MouseButton, Trigger};
+use strokebind::config::{Action, Config, Feedback, MouseButton, Trigger};
 use strokebind::error::Error;
 
 const VALID: &str = r#"
@@ -227,4 +227,33 @@ fn profile_requires_device_and_rejects_bad_min_stroke() {
     let (line, msg) = config_error("trigger = \"right\"\n\n[[profile]]\ntrigger = \"middle\"\n");
     assert_eq!(line, Some(3));
     assert!(msg.contains("device"), "message: {msg}");
+}
+
+#[test]
+fn feedback_defaults_to_off() {
+    let cfg = Config::parse("trigger = \"right\"\n").expect("valid");
+    assert_eq!(cfg.feedback, Feedback::Off);
+}
+
+#[test]
+fn feedback_notify_parses() {
+    let cfg = Config::parse("trigger = \"right\"\nfeedback = \"notify\"\n").expect("valid");
+    assert_eq!(cfg.feedback, Feedback::Notify);
+    let cfg = Config::parse("trigger = \"right\"\nfeedback = \"off\"\n").expect("valid");
+    assert_eq!(cfg.feedback, Feedback::Off);
+}
+
+#[test]
+fn feedback_rejects_unknown_value_with_line() {
+    let (line, msg) = config_error("trigger = \"right\"\nfeedback = \"popup\"\n");
+    assert_eq!(line, Some(2));
+    assert!(msg.contains("notify"), "message: {msg}");
+}
+
+#[test]
+fn resolve_carries_feedback() {
+    let src = format!("feedback = \"notify\"\n{PROFILES}");
+    let cfg = Config::parse(&src).expect("valid");
+    assert_eq!(cfg.resolve("trackball").feedback, Feedback::Notify);
+    assert_eq!(cfg.resolve("other").feedback, Feedback::Notify);
 }

@@ -1,2 +1,2 @@
-error: err_unknown_field.toml line 2: unknown field `min_strok_px`, expected one of `trigger`, `min_stroke_px`, `escape`, `binding`, `profile`
+error: err_unknown_field.toml line 2: unknown field `min_strok_px`, expected one of `trigger`, `min_stroke_px`, `escape`, `feedback`, `binding`, `profile`
   2 | min_strok_px = 10

@@ -1,14 +1,14 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
 Current milestone: M4
-Current task: M4.5
+Current task: M4.6
 Branch: m4-actions
-Last session: M4.4 done
+Last session: M4.5 done
 
 ## Handoff
-Done: M4.4 `check-config FILE` (`src/check.rs`, golden fixtures in `tests/check_config/`); M4.3 run-wiring untested on real hardware (M6.0).
-Next: M4.5 `feedback = "notify"` via the M4.2 run-command path; fake-runner argv test.
-Fragile: run-wiring + hot reload (polled only when a stroke arrives) never exercised on a real mouse; frozen pointer until M4.6. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
+Done: M4.5 `feedback = "notify"` (`actions::feedback::{notify_argv,give}`, wired after the action in `run`); M4.4 `check-config FILE`.
+Next: M4.6 `freeze_pointer` (default false) + `click_slop_px` live-motion mode in `passthrough.rs`; M3.3 tests must pass with true.
+Fragile: run-wiring, hot reload (polled only when a stroke arrives) and notify feedback never exercised on a real desktop (M6.0); frozen pointer until M4.6. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
 
 ## Decisions
 - Rust; deps limited to docs/ARCHITECTURE.md allowed list.
@@ -32,8 +32,8 @@ Fragile: run-wiring + hot reload (polled only when a stroke arrives) never exerc
 - approved P1: stroke trail overlay added as post-0.1 milestone M7 (5 tasks, branch m7-overlay); deps x11rb, smithay-client-toolkit, tiny-skia allowed for M7 only.
 - M4.3: profile = `[[profile]] device = "<name substring, case-insensitive>"`, first match wins, `[[profile.binding]]` beat global ones per stroke. Hot reload (notify 8, parent dir watched, polled when a stroke arrives) swaps bindings only; trigger/min_stroke_px/escape need a restart (message printed). Match tolerance fixed at 0. Key combos / empty run argv rejected at load via serde try_from.
 - M4.4: `check-config <FILE>` positional (no default path yet). OK -> stdout `<path>: OK (N bindings, M profiles)` exit 0; error -> stderr `error: <path> line L: msg` + `  L | <line>`, exit 1 (process::exit, no anyhow prefix). Multi-line toml messages joined with `; `. Missing top-level field reports no line (toml blames root table at offset 0). Goldens: `ok_*`/`err_*.toml` + `.out`. Removed dead `Error::NotImplemented`/`Command::name`.
-- approved P4: M7.1 backend picker checks WAYLAND_DISPLAY before DISPLAY (XWayland sets both); selection test added to acceptance.
-- approved P5: M6.0 compositor verification (record/run on Sway, GNOME, KDE, Hyprland, X11; results in README support matrix) added before M6.1.
+- M4.5: `feedback` is global only (copied into Resolved, so hot reload applies it). Fires only for recognized strokes (clicks never notify); no binding/ambiguous = `<stroke>: no match`. argv `notify-send --app-name=strokebind --expire-time=1500 strokebind <body>` via spawn_detached; runs after the action, failures only printed.
+- approved P4: M7.1 backend picker checks WAYLAND_DISPLAY before DISPLAY (XWayland); selection test added. approved P5: M6.0 compositor verification (Sway, GNOME, KDE, Hyprland, X11 -> README matrix) before M6.1.
 - Stroke grammar: 8 tokens U,D,L,R,UL,UR,DL,DR joined by `-` (so `DR` = down-right diagonal, `L-U` = left then up).
 - Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.
 

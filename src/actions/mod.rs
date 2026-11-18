@@ -1,6 +1,7 @@
 //! Actions run when a stroke is recognized.
 
 pub mod command;
+pub mod feedback;
 pub mod key;
 
 use crate::config::{Action, Binding};

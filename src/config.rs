@@ -197,6 +197,17 @@ impl TryFrom<RawAction> for Action {
     }
 }
 
+/// What the user is shown after a recognized stroke.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Feedback {
+    /// Nothing (default).
+    #[default]
+    Off,
+    /// A desktop notification via `notify-send` naming the stroke, or saying nothing is bound.
+    Notify,
+}
+
 /// One stroke-to-action binding.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -219,6 +230,9 @@ pub struct Config {
     /// Failsafe chord that exits `run` (default `left+right+middle`).
     #[serde(default)]
     pub escape: Escape,
+    /// Feedback after each recognized stroke (default off).
+    #[serde(default)]
+    pub feedback: Feedback,
     /// Stroke bindings.
     #[serde(default)]
     pub binding: Vec<Binding>,
@@ -253,6 +267,8 @@ pub struct Resolved {
     pub min_stroke_px: u32,
     /// Failsafe chord.
     pub escape: Escape,
+    /// Feedback after each recognized stroke (always the global setting).
+    pub feedback: Feedback,
     /// Profile bindings first, then the global ones for strokes the profile does not bind.
     pub bindings: Vec<Binding>,
 }
@@ -303,6 +319,7 @@ impl Config {
             escape: profile
                 .and_then(|p| p.escape.clone())
                 .unwrap_or_else(|| self.escape.clone()),
+            feedback: self.feedback,
             bindings,
         }
     }

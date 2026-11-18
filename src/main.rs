@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use clap::Parser;
-use strokebind::actions::{select, Actions};
+use strokebind::actions::{command, feedback, select, Actions};
 use strokebind::check::check;
 use strokebind::cli::{CheckArgs, Cli, Command, RecordArgs, RunArgs};
 use strokebind::config::Config;
@@ -162,6 +162,13 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
             if let Err(e) = actions.perform(action) {
                 eprintln!("action for {stroke} failed: {e}");
             }
+        }
+        // After the action, so feedback never delays it; a failure (e.g. no notify-send) is only reported.
+        let mode = current.as_ref().map(|r| r.feedback).unwrap_or_default();
+        if let Err(e) = feedback::give(mode, &stroke, action.is_some(), |argv| {
+            command::spawn_detached(argv, command::current_env())
+        }) {
+            eprintln!("feedback failed: {e}");
         }
     })?;
     eprintln!("escape chord held, exiting");
