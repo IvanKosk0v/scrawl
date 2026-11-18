@@ -4,7 +4,6 @@ Current milestone: M5
 Current task: M5.7
 Branch: m5-adapters
 Last session: M5.6 done, handoff saved (2026-11-18)
-
 ## Handoff
 Done: M5.6 `x11::X11Adapter` (fresh x11rb connection per lookup; pure `parse_active_window`/`parse_wm_class`); X11 arm of `window_adapter()` now `Bounded::new(X11Adapter)`. Manual bspwm check pending.
 Next: M5.7 Sway adapter (IPC socket via SWAYSOCK, serde_json parser tests with recorded JSON), replaces the Sway arm.
