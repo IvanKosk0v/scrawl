@@ -1,14 +1,14 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
-Current milestone: M4
-Current task: none (M4.1-M4.6 done)
-Branch: m4-actions
-Last session: M4.6 done
+Current milestone: M5
+Current task: M5.1
+Branch: m5-adapters (create from main on next /next)
+Last session: M4 closed and merged (2026-11-18)
 
 ## Handoff
-Done: M4.6 `passthrough::Mode::{Frozen,Live}` + `freeze_pointer`/`click_slop_px` (slop < every min_stroke_px in live mode) + review fixes; all M4 tasks done.
-Next: `/milestone` to verify M4 acceptance and merge m4-actions after user confirmation.
-Fragile: run-wiring, hot reload (polled only when a stroke arrives), notify feedback and live motion never exercised on a real desktop (M6.0). Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
+Done: M4 merged. User verified on real mouse, X11/bspwm only: list-devices, record, run --timeout (clicks, menu, strokes, escape, timeout), ignored grab tests, run-command action, hot reload + broken edit, notify feedback, live motion + freeze_pointer.
+Next: M5.1 adapter trait `active_window() -> Option<AppId>` with mock-based tests.
+Fragile: no Wayland run yet (M6.0); key-combo action not in the user's hardware list. Reload polled only on strokes. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
 
 ## Decisions
 - Rust; deps limited to docs/ARCHITECTURE.md allowed list.
