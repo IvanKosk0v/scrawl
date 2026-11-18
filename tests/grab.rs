@@ -247,7 +247,13 @@ fn forward_end_to_end() {
 
 /// Start `strokebind run` on `node`; returns once it reports the grab on stderr.
 fn spawn_run(node: &Path, timeout_s: &str) -> Child {
+    spawn_run_env(node, timeout_s, &[])
+}
+
+/// [`spawn_run`] with extra environment variables.
+fn spawn_run_env(node: &Path, timeout_s: &str, env: &[(&str, &str)]) -> Child {
     let mut child = Command::new(env!("CARGO_BIN_EXE_strokebind"))
+        .envs(env.iter().copied())
         .args(["run", "--device"])
         .arg(node)
         .args(["--timeout", timeout_s])
@@ -295,6 +301,43 @@ fn run_escape_chord_exits_and_releases() {
             .expect("emit press");
     }
     assert_eq!(wait_exit(&mut child), Some(0));
+    assert!(!is_grabbed(&node));
+}
+
+/// Test hook: window lookups in `run` never answer (M5.4).
+const HANG: [(&str, &str); 1] = [("STROKEBIND_TEST_ADAPTER", "hang")];
+
+/// M5.4: with a window adapter that never answers, a trigger press does not stop `--timeout`.
+#[test]
+#[ignore = "needs writable /dev/uinput"]
+fn run_timeout_fires_with_hung_adapter() {
+    use evdev::{EventType, InputEvent, KeyCode};
+    let (mut vm, node) = virtual_source("Run Hung Timeout Test");
+    let mut child = spawn_run_env(&node, "1", &HANG);
+    vm.emit(&[InputEvent::new(EventType::KEY.0, KeyCode::BTN_RIGHT.0, 1)])
+        .expect("emit trigger press");
+    assert_eq!(wait_exit(&mut child), Some(0));
+    assert!(!is_grabbed(&node));
+}
+
+/// M5.4: with a window adapter that never answers, the escape chord still exits `run`; the
+/// trigger (right) is pressed first so its lookup is the one that hangs.
+#[test]
+#[ignore = "needs writable /dev/uinput"]
+fn run_escape_chord_fires_with_hung_adapter() {
+    use evdev::{EventType, InputEvent, KeyCode};
+    let (mut vm, node) = virtual_source("Run Hung Escape Test");
+    let mut child = spawn_run_env(&node, "30", &HANG);
+    let start = Instant::now();
+    for code in [KeyCode::BTN_RIGHT, KeyCode::BTN_LEFT, KeyCode::BTN_MIDDLE] {
+        vm.emit(&[InputEvent::new(EventType::KEY.0, code.0, 1)])
+            .expect("emit press");
+    }
+    assert_eq!(wait_exit(&mut child), Some(0));
+    assert!(
+        start.elapsed() < Duration::from_secs(5),
+        "escape, not the 30 s timeout"
+    );
     assert!(!is_grabbed(&node));
 }
 

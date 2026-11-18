@@ -16,7 +16,7 @@ use strokebind::focus::Focused;
 use strokebind::passthrough::{Mode, Passthrough};
 use strokebind::reload::ConfigWatcher;
 use strokebind::stroke_loop::{run_events, LoopParams};
-use strokebind::window::GlobalOnly;
+use strokebind::window::{Bounded, GlobalOnly, NeverAnswers};
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
@@ -155,8 +155,7 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
         actions.prepare(&r.bindings)?;
     }
     eprintln!("grabbed {}; hold {} to exit", path.display(), escape);
-    // M5.4 picks the real adapter; until then every stroke gets the global bindings.
-    let engine = Focused::new(engine, Box::new(GlobalOnly));
+    let engine = Focused::new(engine, Box::new(window_adapter()));
     forward(&mut grab, &mut out, engine, |stroke, app| {
         println!("{stroke}");
         match watcher.as_mut().and_then(ConfigWatcher::poll) {
@@ -205,4 +204,13 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
     })?;
     eprintln!("escape chord held, exiting");
     Ok(())
+}
+
+/// The bounded window adapter for `run`. M5.5 picks the real backend; until then every stroke
+/// gets the global bindings. `STROKEBIND_TEST_ADAPTER=hang` is a test hook: lookups never answer.
+fn window_adapter() -> Bounded {
+    if std::env::var_os("STROKEBIND_TEST_ADAPTER").is_some_and(|v| v == "hang") {
+        return Bounded::new(NeverAnswers);
+    }
+    Bounded::new(GlobalOnly)
 }
