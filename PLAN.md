@@ -35,7 +35,7 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 - [x] M4.6 `freeze_pointer` (default false) + `click_slop_px` (default 6, must be < min_stroke_px). false: REL_X/Y forwarded live while the trigger is held, only the press withheld; at release, by max distance from the press point: <= slop = click (press+release, MSC kept, at release position), recognized stroke = action and no click, otherwise swallowed. true: M3.3 behavior unchanged, slop unused. Acceptance: config validation tests; live-mode tests for click within slop, stroke, swallow band, press-move-return beyond slop; M3.3 tests still pass with true.
 
 ## M5 Per-app profiles (adapters; global fallback always works)
-- [ ] M5.1 Adapter trait `active_window() -> Option<AppId>`. Acceptance: mock-based tests.
+- [x] M5.1 Adapter trait `active_window() -> Option<AppId>`. Acceptance: mock-based tests.
 - [ ] M5.2 Sway + Hyprland adapters (IPC sockets). Acceptance: parser tests with recorded JSON.
 - [ ] M5.3 KDE + GNOME best-effort, or documented "global only". Acceptance: documented in README support matrix.
 

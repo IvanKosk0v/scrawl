@@ -11,3 +11,4 @@ pub mod recognizer;
 pub mod reload;
 pub mod stroke_loop;
 pub mod sys;
+pub mod window;

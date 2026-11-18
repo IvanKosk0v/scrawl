@@ -1,13 +1,13 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
 Current milestone: M5
-Current task: M5.1
-Branch: m5-adapters (create from main on next /next)
-Last session: M4 closed and merged (2026-11-18)
+Current task: M5.2
+Branch: m5-adapters
+Last session: M5.1 done (2026-11-18)
 
 ## Handoff
-Done: M4 merged. User verified on real mouse, X11/bspwm only: list-devices, record, run --timeout (clicks, menu, strokes, escape, timeout), ignored grab tests, run-command action, hot reload + broken edit, notify feedback, live motion + freeze_pointer.
-Next: M5.1 adapter trait `active_window() -> Option<AppId>` with mock-based tests.
+Done: M5.1 `src/window.rs`: `AppId` (trimmed, non-blank), `WindowAdapter::active_window() -> Option<AppId>`, `GlobalOnly` fallback; mock tests. M4 verified on X11/bspwm only.
+Next: M5.2 Sway + Hyprland adapters, parser tests on recorded JSON. Open gap: no PLAN task adds `app` matching in config or wires adapters into `run` (proposal needed).
 Fragile: no Wayland run yet (M6.0); key-combo action not in the user's hardware list. Reload polled only on strokes. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
 
 ## Decisions
@@ -35,6 +35,7 @@ Fragile: no Wayland run yet (M6.0); key-combo action not in the user's hardware 
 - approved P4: M7.1 backend picker checks WAYLAND_DISPLAY before DISPLAY (XWayland); selection test added. approved P5: M6.0 compositor verification (Sway, GNOME, KDE, Hyprland, X11 -> README matrix) before M6.1.
 - M4.6: engine default stays Frozen (M3.3 tests unchanged = true-mode proof); Live withholds trigger+MSC of the press report, emits the rest live; at release: rest of report first, then max dist from press <= slop (checked first) = press+release replayed, else stroke, else swallowed. freeze/slop global only, restart-only. Review fixes: slop check skipped when frozen; error line = offending profile's `min_stroke_px`, else top-level `click_slop_px`/`min_stroke_px` (section-scoped search); repeated trigger press while held is stripped; dist² saturates.
 - M4 review: keyboard created eagerly via `Actions::prepare` (startup failure = exit, reload failure printed; a reload-time creation can still lose that same stroke's keys since reload is polled per stroke). Blank profile `device` rejected. LOWs deferred: reload polled only on strokes; partial key-combo emit failure may leave modifiers held.
+- M5.1: `active_window` returns Option (failure = None = global bindings; adapter reports its own error); `AppId::new` trims, blank = None; `GlobalOnly` always None (for M5.3 unsupported desktops). Adapters query fresh each call, no caching.
 - Stroke grammar: U,D,L,R,UL,UR,DL,DR joined by `-` (`L-U` = left then up). Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.
 
 ## Proposals (numbered; awaiting user `/approve P<n>` or `/reject P<n>`)
