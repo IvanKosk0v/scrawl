@@ -34,6 +34,7 @@ Fragile: frozen pointer until M4.6. Compensating release after SYN_DROPPED arriv
 - M4.2: no shell (argv direct; opt in via ["sh","-c",..]); env allowlist HOME USER LOGNAME SHELL PATH LANG LANGUAGE TZ DISPLAY XAUTHORITY WAYLAND_DISPLAY DBUS_SESSION_BUS_ADDRESS DESKTOP_SESSION SWAYSOCK I3SOCK HYPRLAND_INSTANCE_SIGNATURE + LC_* + XDG_*; PATH default if missing; cwd $HOME or /; stdin+stdout null, stderr inherited; reaped by a thread (no unsafe/setsid).
 - approved P1: stroke trail overlay added as post-0.1 milestone M7 (5 tasks, branch m7-overlay); deps x11rb, smithay-client-toolkit, tiny-skia allowed for M7 only.
 - M4.3: profile = `[[profile]] device = "<name substring, case-insensitive>"`, first match wins, `[[profile.binding]]` beat global ones per stroke. Hot reload (notify 8, parent dir watched, polled when a stroke arrives) swaps bindings only; trigger/min_stroke_px/escape need a restart (message printed). Match tolerance fixed at 0. Key combos / empty run argv rejected at load via serde try_from.
+- approved P4: M7.1 backend picker checks WAYLAND_DISPLAY before DISPLAY (XWayland sets both); selection test added to acceptance.
 - Stroke grammar: 8 tokens U,D,L,R,UL,UR,DL,DR joined by `-` (so `DR` = down-right diagonal, `L-U` = left then up).
 - Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.
 
