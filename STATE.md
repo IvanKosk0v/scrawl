@@ -7,7 +7,7 @@ Last session: M5.1 done (2026-11-18)
 
 ## Handoff
 Done: M5.1 `src/window.rs`: `AppId` (trimmed, non-blank), `WindowAdapter::active_window() -> Option<AppId>`, `GlobalOnly` fallback; mock tests. M4 verified on X11/bspwm only.
-Next: M5.2 Sway + Hyprland adapters, parser tests on recorded JSON. Open gap: no PLAN task adds `app` matching in config or wires adapters into `run` (proposal needed).
+Next: M5.2 config `app =` on bindings/profiles + check-config goldens (P6 plan).
 Fragile: no Wayland run yet (M6.0); key-combo action not in the user's hardware list. Reload polled only on strokes. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
 
 ## Decisions
@@ -36,6 +36,7 @@ Fragile: no Wayland run yet (M6.0); key-combo action not in the user's hardware 
 - M4.6: engine default stays Frozen (M3.3 tests unchanged = true-mode proof); Live withholds trigger+MSC of the press report, emits the rest live; at release: rest of report first, then max dist from press <= slop (checked first) = press+release replayed, else stroke, else swallowed. freeze/slop global only, restart-only. Review fixes: slop check skipped when frozen; error line = offending profile's `min_stroke_px`, else top-level `click_slop_px`/`min_stroke_px` (section-scoped search); repeated trigger press while held is stripped; dist² saturates.
 - M4 review: keyboard created eagerly via `Actions::prepare` (startup failure = exit, reload failure printed; a reload-time creation can still lose that same stroke's keys since reload is polled per stroke). Blank profile `device` rejected. LOWs deferred: reload polled only on strokes; partial key-combo emit failure may leave modifiers held.
 - M5.1: `active_window` returns Option (failure = None = global bindings; adapter reports its own error); `AppId::new` trims, blank = None; `GlobalOnly` always None (for M5.3 unsupported desktops). Adapters query fresh each call, no caching.
+- approved P6: M5 = 8 tasks (app config, run wiring at press, backend picker, X11/Sway/Hyprland adapters, README matrix; KDE+GNOME global-only for 0.1). Deps: serde_json new, x11rb extended to M5; no zbus.
 - Stroke grammar: U,D,L,R,UL,UR,DL,DR joined by `-` (`L-U` = left then up). Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.
 
 ## Proposals (numbered; awaiting user `/approve P<n>` or `/reject P<n>`)

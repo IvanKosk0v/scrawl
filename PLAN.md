@@ -36,11 +36,16 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 
 ## M5 Per-app profiles (adapters; global fallback always works)
 - [x] M5.1 Adapter trait `active_window() -> Option<AppId>`. Acceptance: mock-based tests.
-- [ ] M5.2 Sway + Hyprland adapters (IPC sockets). Acceptance: parser tests with recorded JSON.
-- [ ] M5.3 KDE + GNOME best-effort, or documented "global only". Acceptance: documented in README support matrix.
+- [ ] M5.2 Config `app = "<WM_CLASS or app_id>"` on bindings and profiles; case-insensitive match, global fallback. Acceptance: parse/match tests; check-config validation with golden tests. (approved P6)
+- [ ] M5.3 Wire WindowAdapter into `run`; active window sampled at trigger press, not release. Acceptance: mock-adapter test proving press-time sampling and global fallback.
+- [ ] M5.4 Backend picker: WAYLAND_DISPLAY checked before DISPLAY (XWayland sets both); shared with M7.1 (P4). Acceptance: selection tests incl. both set => Wayland.
+- [ ] M5.5 X11 adapter via EWMH `_NET_ACTIVE_WINDOW` + `WM_CLASS` (x11rb). Acceptance: tests of property parsing; manual check on bspwm.
+- [ ] M5.6 Sway adapter (IPC socket). Acceptance: parser tests with recorded JSON.
+- [ ] M5.7 Hyprland adapter (IPC socket). Acceptance: parser tests with recorded JSON.
+- [ ] M5.8 README support matrix lines per backend; KDE + GNOME documented as global-only for 0.1. Acceptance: matrix in README, each line maps to a tested adapter or `GlobalOnly`.
 
 ## M6 Packaging + launch
-- [ ] M6.0 Compositor verification (manual, needs the user or VMs): run `record` and `run` on Sway, GNOME Wayland, KDE, Hyprland and X11; check clicks, strokes and key-combo actions. Acceptance: results per desktop recorded in the README support matrix (feeds M5.3 and M6.3).
+- [ ] M6.0 Compositor verification (manual, needs the user or VMs): run `record` and `run` on Sway, GNOME Wayland, KDE, Hyprland and X11; check clicks, strokes and key-combo actions. Acceptance: results per desktop recorded in the README support matrix (feeds M5.8 and M6.3).
 - [ ] M6.1 systemd user unit + udev rule + `install.sh` (no root-run daemon). Acceptance: fresh Ubuntu VM test notes.
 - [ ] M6.2 `.deb` via cargo-deb + release workflow. Acceptance: installs; `strokebind --version` works.
 - [ ] M6.3 README: pitch, 20s demo GIF, install, config example, support matrix, comparison table (docs/RESEARCH.md), FAQ. Acceptance: every claim maps to a tested feature; user approves the final text.
