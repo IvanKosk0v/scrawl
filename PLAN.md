@@ -1,7 +1,7 @@
 # PLAN (rigid). Changes only via `/approve P<n>`.
 
 Legend: [ ] todo, [x] done. Every task ends with `./scripts/check.sh` OK and follows CLAUDE.md "Definition of done".
-Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-actions, m5-adapters, m6-launch.
+Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-actions, m5-adapters, m6-launch, m7-overlay.
 
 ## M0 Foundation
 - [x] M0.1 Crate layout: `src/{main,lib,error,config}.rs`, `src/recognizer/`, `src/device/`, `src/sys/`. Acceptance: builds, check.sh OK.
@@ -45,3 +45,10 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 - [ ] M6.3 README: pitch, 20s demo GIF, install, config example, support matrix, comparison table (docs/RESEARCH.md), FAQ. Acceptance: every claim maps to a tested feature; user approves the final text.
 - [ ] M6.4 Release hygiene: CHANGELOG 0.1.0 section, tag v0.1.0, verify LICENSE headers, SECURITY contact works. Acceptance: `cargo package --list` shows license files; CI green on the tag.
 - [ ] M6.5 Launch checklist: Show HN, r/linux, r/unixporn, r/rust, compositor subreddits, AUR package. Acceptance: a checklist file with final post texts, ready for the user to submit.
+
+## M7 Stroke trail overlay (post-0.1; approved P1)
+- [ ] M7.1 `Overlay` trait + shared tiny-skia trail renderer; backend picked from WAYLAND_DISPLAY/DISPLAY. Acceptance: renderer tests on a pixel buffer, backend-selection tests.
+- [ ] M7.2 X11 backend: transparent click-through override-redirect window (x11rb shape+xfixes), cursor start from QueryPointer; Shape-masked trail without a compositor. Acceptance: tests of geometry/input-region logic; manual check on bspwm.
+- [ ] M7.3 Wayland backend: wlr-layer-shell (smithay-client-toolkit); trail starts at screen center where no cursor position is available. Acceptance: tests of non-protocol logic; manual check on Sway/Hyprland/KDE; GNOME documented as notify-only (M4.5).
+- [ ] M7.4 Render thread fed by the event loop, never blocking input forwarding. Acceptance: fake-overlay test proving the loop does not block.
+- [ ] M7.5 Multi-output and HiDPI. Acceptance: tests of scaling/output mapping.
