@@ -1,14 +1,14 @@
-//! M3.3: click passthrough. The trigger press is held until stroke-vs-click is decided; a click is replayed unchanged.
+//! M3.3 (`freeze_pointer = true`, the engine default) and M4.6 live-motion click passthrough.
 
 use evdev::{EventType, InputEvent, KeyCode, MiscCode, RelativeAxisCode, SynchronizationCode};
 use proptest::prelude::*;
 use strokebind::config::Trigger;
-use strokebind::passthrough::{Output, Passthrough};
+use strokebind::passthrough::{Mode, Output, Passthrough};
 use strokebind::stroke_loop::LoopParams;
 
 type Ev = (u16, u16, i32);
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 enum Out {
     Emit(Vec<Ev>),
     Stroke(String),
@@ -183,4 +183,101 @@ fn escape_chord_needs_all_buttons_down_at_once() {
         assert_eq!(push_report(&mut pt, &r), vec![Out::Emit(r.clone())]);
     }
     assert_eq!(push_report(&mut pt, &[side(1)]), vec![Out::Escape]);
+}
+
+// ---- M4.6 live motion (`freeze_pointer = false`) ----
+
+fn live_engine() -> Passthrough {
+    engine().with_mode(Mode::Live { click_slop_px: 6 })
+}
+
+fn live_feed(reports: &[Vec<Ev>]) -> Vec<Out> {
+    let mut pt = live_engine();
+    reports
+        .iter()
+        .flat_map(|r| push_report(&mut pt, r))
+        .collect()
+}
+
+#[test]
+fn live_click_within_slop_is_replayed_at_release_position() {
+    let mut pt = live_engine();
+    let press = vec![scan(0x90001), right(1)];
+    assert_eq!(
+        push_report(&mut pt, &press),
+        vec![],
+        "only the press is withheld"
+    );
+    assert_eq!(push_report(&mut pt, &[x(3)]), vec![Out::Emit(vec![x(3)])]);
+    assert_eq!(push_report(&mut pt, &[x(-1)]), vec![Out::Emit(vec![x(-1)])]);
+    assert_eq!(
+        push_report(&mut pt, &[x(2), scan(0x90001), right(0)]),
+        vec![
+            Out::Emit(vec![x(2)]),
+            Out::Emit(press),
+            Out::Emit(vec![scan(0x90001), right(0)]),
+        ]
+    );
+}
+
+#[test]
+fn live_stroke_moves_pointer_and_reports_stroke() {
+    let mut reports = vec![vec![scan(1), right(1)]];
+    reports.extend(std::iter::repeat_n(vec![x(20)], 5));
+    reports.push(vec![scan(1), right(0)]);
+    let mut expected: Vec<Out> = std::iter::repeat_n(Out::Emit(vec![x(20)]), 5).collect();
+    expected.push(Out::Stroke("R".into()));
+    assert_eq!(live_feed(&reports), expected);
+}
+
+#[test]
+fn live_swallow_band_emits_no_click() {
+    let reports = vec![vec![right(1)], vec![x(10)], vec![right(0)]];
+    assert_eq!(live_feed(&reports), vec![Out::Emit(vec![x(10)])]);
+}
+
+#[test]
+fn live_press_move_return_beyond_slop_is_swallowed() {
+    let reports = vec![vec![right(1)], vec![x(10)], vec![x(-10)], vec![right(0)]];
+    assert_eq!(
+        live_feed(&reports),
+        vec![Out::Emit(vec![x(10)]), Out::Emit(vec![x(-10)])]
+    );
+}
+
+#[test]
+fn live_other_buttons_and_wheel_pass_through_while_held() {
+    let wheel = rel(RelativeAxisCode::REL_WHEEL, 1);
+    let left = |v| key(KeyCode::BTN_LEFT, v);
+    let mut pt = live_engine();
+    assert_eq!(
+        push_report(&mut pt, &[x(1), right(1)]),
+        vec![Out::Emit(vec![x(1)])]
+    );
+    for r in [vec![wheel], vec![left(1)], vec![left(0)]] {
+        assert_eq!(push_report(&mut pt, &r), vec![Out::Emit(r.clone())]);
+    }
+}
+
+#[test]
+fn live_escape_chord_still_exits() {
+    let mut pt = live_engine();
+    let left = vec![key(KeyCode::BTN_LEFT, 1)];
+    assert_eq!(push_report(&mut pt, &left), vec![Out::Emit(left.clone())]);
+    assert_eq!(push_report(&mut pt, &[right(1)]), vec![]);
+    assert_eq!(
+        push_report(&mut pt, &[key(KeyCode::BTN_MIDDLE, 1)]),
+        vec![Out::Escape]
+    );
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(256))]
+    #[test]
+    fn live_without_trigger_output_equals_input(
+        reports in prop::collection::vec(prop::collection::vec(non_trigger_event(), 1..4), 0..20)
+    ) {
+        let expected: Vec<Out> = reports.iter().cloned().map(Out::Emit).collect();
+        prop_assert_eq!(live_feed(&reports), expected);
+    }
 }

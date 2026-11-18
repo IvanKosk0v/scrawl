@@ -5,14 +5,14 @@ use clap::Parser;
 use strokebind::actions::{command, feedback, select, Actions};
 use strokebind::check::check;
 use strokebind::cli::{CheckArgs, Cli, Command, RecordArgs, RunArgs};
-use strokebind::config::Config;
+use strokebind::config::{Config, Resolved, DEFAULT_CLICK_SLOP_PX};
 use strokebind::device;
 use strokebind::device::forward::forward;
 use strokebind::device::grab::{install_failsafes, Grabbed};
 use strokebind::device::source::{button_code, EvdevSource};
 use strokebind::device::virtual_mouse::{MouseCaps, VirtualMouse};
 use strokebind::error::Error;
-use strokebind::passthrough::Passthrough;
+use strokebind::passthrough::{Mode, Passthrough};
 use strokebind::reload::ConfigWatcher;
 use strokebind::stroke_loop::{run_events, LoopParams};
 
@@ -121,7 +121,17 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
         .as_ref()
         .map(|r| r.escape.clone())
         .unwrap_or_default();
+    let mode = match current.as_ref() {
+        Some(r) if r.freeze_pointer => Mode::Frozen,
+        Some(r) => Mode::Live {
+            click_slop_px: r.click_slop_px,
+        },
+        None => Mode::Live {
+            click_slop_px: DEFAULT_CLICK_SLOP_PX,
+        },
+    };
     let engine = Passthrough::new(&params)
+        .with_mode(mode)
         .with_escape(escape.buttons().iter().map(|&b| button_code(b)).collect());
     // Refuse to run without a working escape; returning drops `grab`, releasing the mouse.
     caps.check_escape(&escape)?;
@@ -145,10 +155,20 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
             Some(Ok(new)) => {
                 let new = new.resolve(&caps.name);
                 if let Some(old) = current.as_ref() {
-                    if (old.trigger, old.min_stroke_px, &old.escape)
-                        != (new.trigger, new.min_stroke_px, &new.escape)
-                    {
-                        eprintln!("trigger, min_stroke_px and escape change only after a restart");
+                    let restart = |r: &Resolved| {
+                        (
+                            r.trigger,
+                            r.min_stroke_px,
+                            r.escape.clone(),
+                            r.freeze_pointer,
+                            r.click_slop_px,
+                        )
+                    };
+                    if restart(old) != restart(&new) {
+                        eprintln!(
+                            "trigger, min_stroke_px, escape, freeze_pointer and click_slop_px \
+                             change only after a restart"
+                        );
                     }
                 }
                 current = Some(new);

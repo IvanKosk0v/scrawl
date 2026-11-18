@@ -257,3 +257,51 @@ fn resolve_carries_feedback() {
     assert_eq!(cfg.resolve("trackball").feedback, Feedback::Notify);
     assert_eq!(cfg.resolve("other").feedback, Feedback::Notify);
 }
+
+#[test]
+fn live_motion_defaults() {
+    let cfg = Config::parse("trigger = \"right\"\n").expect("valid");
+    assert!(!cfg.freeze_pointer);
+    assert_eq!(cfg.click_slop_px, 6);
+}
+
+#[test]
+fn freeze_pointer_and_slop_parse() {
+    let cfg = Config::parse("trigger = \"right\"\nfreeze_pointer = true\nclick_slop_px = 3\n")
+        .expect("valid");
+    assert!(cfg.freeze_pointer);
+    assert_eq!(cfg.click_slop_px, 3);
+}
+
+#[test]
+fn slop_must_be_below_min_stroke_px_with_line() {
+    let (line, msg) = config_error("trigger = \"right\"\n\nclick_slop_px = 40\n");
+    assert_eq!(line, Some(3));
+    assert_eq!(
+        msg,
+        "click_slop_px (40) must be less than min_stroke_px (40)"
+    );
+    // Default slop against a too-small min_stroke_px points at min_stroke_px.
+    let (line, msg) = config_error("trigger = \"right\"\nmin_stroke_px = 5\n");
+    assert_eq!(line, Some(2));
+    assert!(msg.contains("(6)") && msg.contains("(5)"), "message: {msg}");
+}
+
+#[test]
+fn slop_checked_against_profile_min_stroke_px() {
+    let src = "trigger = \"right\"\n[[profile]]\ndevice = \"trackball\"\nmin_stroke_px = 5\n";
+    let (_, msg) = config_error(src);
+    assert_eq!(
+        msg,
+        "click_slop_px (6) must be less than min_stroke_px (5) in profile \"trackball\""
+    );
+}
+
+#[test]
+fn resolve_carries_live_settings() {
+    let src = format!("freeze_pointer = true\nclick_slop_px = 4\n{PROFILES}");
+    let cfg = Config::parse(&src).expect("valid");
+    let r = cfg.resolve("trackball");
+    assert!(r.freeze_pointer);
+    assert_eq!(r.click_slop_px, 4);
+}

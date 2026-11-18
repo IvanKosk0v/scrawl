@@ -233,6 +233,13 @@ pub struct Config {
     /// Feedback after each recognized stroke (default off).
     #[serde(default)]
     pub feedback: Feedback,
+    /// Buffer all motion until the trigger is released instead of moving the pointer live (default false).
+    #[serde(default)]
+    pub freeze_pointer: bool,
+    /// Live mode: a release within this many pixels of the press point is a click (default 6; must be
+    /// less than `min_stroke_px`).
+    #[serde(default = "default_click_slop_px")]
+    pub click_slop_px: u32,
     /// Stroke bindings.
     #[serde(default)]
     pub binding: Vec<Binding>,
@@ -269,6 +276,10 @@ pub struct Resolved {
     pub escape: Escape,
     /// Feedback after each recognized stroke (always the global setting).
     pub feedback: Feedback,
+    /// Buffer motion until release (always the global setting).
+    pub freeze_pointer: bool,
+    /// Click distance in live mode (always the global setting).
+    pub click_slop_px: u32,
     /// Profile bindings first, then the global ones for strokes the profile does not bind.
     pub bindings: Vec<Binding>,
 }
@@ -280,11 +291,18 @@ fn default_min_stroke_px() -> u32 {
     DEFAULT_MIN_STROKE_PX
 }
 
+/// Default for `click_slop_px`.
+pub const DEFAULT_CLICK_SLOP_PX: u32 = 6;
+
+fn default_click_slop_px() -> u32 {
+    DEFAULT_CLICK_SLOP_PX
+}
+
 impl Config {
     /// Parse and validate a TOML config; errors carry the 1-based line when known. A missing
     /// top-level field has no line (toml blames the root table, which starts at offset 0).
     pub fn parse(src: &str) -> Result<Self, Error> {
-        toml::from_str(src).map_err(|e| {
+        let cfg: Config = toml::from_str(src).map_err(|e| {
             let message = e.message().to_owned();
             let root_missing = message.starts_with("missing field");
             Error::Config {
@@ -294,7 +312,31 @@ impl Config {
                     .map(|s| src[..s.start].bytes().filter(|&b| b == b'\n').count() + 1),
                 message,
             }
-        })
+        })?;
+        cfg.check_slop(src)?;
+        Ok(cfg)
+    }
+
+    /// `click_slop_px` must stay below every effective `min_stroke_px`, or clicks would swallow strokes.
+    fn check_slop(&self, src: &str) -> Result<(), Error> {
+        let slop = self.click_slop_px;
+        let global = std::iter::once((self.min_stroke_px, None));
+        let profiles = self
+            .profile
+            .iter()
+            .filter_map(|p| p.min_stroke_px.map(|m| (m, Some(p.device.as_str()))));
+        for (min, device) in global.chain(profiles) {
+            if slop >= min {
+                let place = device.map_or_else(String::new, |d| format!(" in profile \"{d}\""));
+                return Err(Error::Config {
+                    line: key_line(src, "click_slop_px").or_else(|| key_line(src, "min_stroke_px")),
+                    message: format!(
+                        "click_slop_px ({slop}) must be less than min_stroke_px ({min}){place}"
+                    ),
+                });
+            }
+        }
+        Ok(())
     }
 
     /// The settings for the device called `device_name`: the first profile whose `device` is a
@@ -320,7 +362,20 @@ impl Config {
                 .and_then(|p| p.escape.clone())
                 .unwrap_or_else(|| self.escape.clone()),
             feedback: self.feedback,
+            freeze_pointer: self.freeze_pointer,
+            click_slop_px: self.click_slop_px,
             bindings,
         }
     }
+}
+
+/// 1-based line of the first `key = ...` assignment in `src`.
+fn key_line(src: &str, key: &str) -> Option<usize> {
+    src.lines()
+        .position(|l| {
+            l.trim_start()
+                .strip_prefix(key)
+                .is_some_and(|rest| rest.trim_start().starts_with('='))
+        })
+        .map(|i| i + 1)
 }

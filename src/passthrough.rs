@@ -1,5 +1,7 @@
 //! Click passthrough: raw reports are forwarded unchanged, except that a trigger press is held back until its
-//! release decides between a plain click (replayed verbatim) and a stroke (swallowed and reported).
+//! release decides between a plain click and a stroke. [`Mode::Frozen`] buffers everything until then (click =
+//! replayed verbatim, stroke = swallowed and reported); [`Mode::Live`] forwards motion immediately and withholds
+//! only the press (click within the slop, stroke reported, anything else swallowed).
 //!
 //! Pure logic over `evdev::InputEvent` values; no I/O.
 
@@ -22,11 +24,29 @@ pub enum Output {
     Escape,
 }
 
+/// How the pointer behaves while the trigger is held.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Mode {
+    /// `freeze_pointer = true`: everything is buffered until release (M3.3).
+    #[default]
+    Frozen,
+    /// `freeze_pointer = false`: motion and other events are forwarded live; only the press is withheld.
+    Live {
+        /// A release within this distance of the press point is a click.
+        click_slop_px: u32,
+    },
+}
+
 /// A trigger press waiting for its release.
 #[derive(Debug)]
 struct Pending {
+    /// Frozen: every report since the press. Live: unused.
     reports: Vec<Vec<InputEvent>>,
+    /// Live: the withheld trigger press (with its MSC events).
+    press: Vec<InputEvent>,
     points: Vec<Point>,
+    /// Largest squared distance from the press point so far.
+    max_dist2: i64,
 }
 
 /// Stroke-vs-click state machine, fed one raw event at a time.
@@ -38,6 +58,7 @@ pub struct Passthrough {
     pending: Option<Pending>,
     escape: Vec<KeyCode>,
     held: Vec<KeyCode>,
+    mode: Mode,
 }
 
 impl Passthrough {
@@ -54,12 +75,19 @@ impl Passthrough {
                 .map(|&b| button_code(b))
                 .collect(),
             held: Vec::new(),
+            mode: Mode::Frozen,
         }
     }
 
     /// Replace the escape chord: holding all of `buttons` at once yields [`Output::Escape`].
     pub fn with_escape(mut self, buttons: Vec<KeyCode>) -> Self {
         self.escape = buttons;
+        self
+    }
+
+    /// Choose frozen (default) or live pointer motion while the trigger is held.
+    pub fn with_mode(mut self, mode: Mode) -> Self {
+        self.mode = mode;
         self
     }
 
@@ -114,22 +142,51 @@ impl Passthrough {
         }
         let trigger = self.trigger_value(&report);
         let Some(pending) = self.pending.as_mut() else {
-            if trigger == Some(1) {
-                self.pending = Some(Pending {
-                    reports: vec![report],
-                    points: vec![Point { x: 0, y: 0 }],
-                });
-                return Vec::new();
+            if trigger != Some(1) {
+                return vec![Output::Emit(report)];
             }
-            return vec![Output::Emit(report)];
+            let origin = vec![Point { x: 0, y: 0 }];
+            return match self.mode {
+                Mode::Frozen => {
+                    self.pending = Some(Pending {
+                        reports: vec![report],
+                        press: Vec::new(),
+                        points: origin,
+                        max_dist2: 0,
+                    });
+                    Vec::new()
+                }
+                Mode::Live { .. } => {
+                    let (press, rest) = split_trigger(report, self.trigger);
+                    self.pending = Some(Pending {
+                        reports: Vec::new(),
+                        press,
+                        points: origin,
+                        max_dist2: 0,
+                    });
+                    emit_nonempty(rest)
+                }
+            };
         };
         let (dx, dy) = motion(&report);
         if dx != 0 || dy != 0 {
             let last = pending.points[pending.points.len() - 1];
-            pending.points.push(Point {
+            let p = Point {
                 x: last.x.saturating_add(dx),
                 y: last.y.saturating_add(dy),
-            });
+            };
+            let (px, py) = (i64::from(p.x), i64::from(p.y));
+            pending.max_dist2 = pending.max_dist2.max(px * px + py * py);
+            pending.points.push(p);
+        }
+        if let Mode::Live { click_slop_px } = self.mode {
+            if trigger != Some(0) {
+                return vec![Output::Emit(report)];
+            }
+            let Some(done) = self.pending.take() else {
+                return Vec::new();
+            };
+            return self.live_release(done, report, click_slop_px);
         }
         pending.reports.push(report);
         if trigger != Some(0) {
@@ -161,6 +218,43 @@ impl Passthrough {
                 out
             }
         }
+    }
+
+    /// Live mode release: the rest of the report first (pointer ends at the release position), then a
+    /// click within the slop, else the stroke if one is recognized, else nothing.
+    fn live_release(&self, done: Pending, report: Vec<InputEvent>, slop: u32) -> Vec<Output> {
+        let (release, rest) = split_trigger(report, self.trigger);
+        let mut out = emit_nonempty(rest);
+        let slop = i64::from(slop);
+        if done.max_dist2 <= slop * slop {
+            out.push(Output::Emit(done.press));
+            out.push(Output::Emit(release));
+        } else if let Some(stroke) = recognize(
+            &done.points,
+            self.params.min_step_len,
+            self.params.min_run_len,
+        ) {
+            out.push(Output::Stroke(stroke));
+        }
+        out
+    }
+}
+
+/// Split a report into (trigger key + MSC events, everything else).
+fn split_trigger(report: Vec<InputEvent>, trigger: KeyCode) -> (Vec<InputEvent>, Vec<InputEvent>) {
+    report.into_iter().partition(|e| match e.destructure() {
+        EventSummary::Key(_, code, _) => code == trigger,
+        EventSummary::Misc(..) => true,
+        _ => false,
+    })
+}
+
+/// `[Emit(report)]`, or nothing for an empty report.
+fn emit_nonempty(report: Vec<InputEvent>) -> Vec<Output> {
+    if report.is_empty() {
+        Vec::new()
+    } else {
+        vec![Output::Emit(report)]
     }
 }
 
