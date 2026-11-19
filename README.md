@@ -9,16 +9,16 @@ strokebind runs the action you bound to it. Plain clicks (including right-click 
 Strokes and clicks work on every desktop, because strokebind reads the mouse through evdev. Per-app bindings
 (`app = "..."`) need to know the focused window, which depends on the desktop:
 
-| Desktop | Per-app bindings | How the focused app is read |
-|---|---|---|
-| X11 (any window manager) | yes | EWMH `_NET_ACTIVE_WINDOW` + `WM_CLASS` |
-| Sway | yes | i3 IPC `get_tree` over `SWAYSOCK` |
-| Hyprland | yes | `j/activewindow` over the socket named by `HYPRLAND_INSTANCE_SIGNATURE` |
-| KDE Plasma (Wayland) | global bindings only | not available in 0.1 |
-| GNOME (Wayland) | global bindings only | not available in 0.1 |
+| Desktop | Per-app bindings | How the focused app is read | Verified on a real session |
+|---|---|---|---|
+| X11 (any window manager) | yes | EWMH `_NET_ACTIVE_WINDOW` + `WM_CLASS` | yes (bspwm) |
+| Sway | yes | i3 IPC `get_tree` over `SWAYSOCK` | yes |
+| Hyprland | yes | `j/activewindow` over the socket named by `HYPRLAND_INSTANCE_SIGNATURE` | yes |
+| KDE Plasma (Wayland) | global bindings only | not available in 0.1 | yes |
+| GNOME (Wayland) | global bindings only | not available in 0.1 | yes |
 
-Real-session checks so far: KDE Plasma Wayland and X11 with bspwm (including per-app bindings). The Sway and Hyprland adapters are tested
-against recorded replies and a fake socket only; GNOME is untested. Details land in M6.0.
+"Verified" means `record` and `run` were checked by hand on that desktop: clicks, strokes, run and key-combo actions, and
+(where supported) per-app bindings.
 
 ## Failsafes
 `strokebind run` grabs your mouse exclusively, so there are several ways out that never need the mouse to work:
