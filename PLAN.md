@@ -46,7 +46,7 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 - [x] M5.9 README support matrix lines per backend; KDE + GNOME documented as global-only for 0.1. Acceptance: matrix in README, each line maps to a tested adapter or `GlobalOnly`.
 
 ## M6 Packaging + launch
-- [x] M6.1 systemd user unit + udev rule + `install.sh` (no root-run daemon). Acceptance: fresh Ubuntu VM test notes.
+- [x] M6.1 systemd user unit + udev rule + `install.sh` (no root-run daemon). Acceptance: CI job `package` green on a fresh Ubuntu runner (approved P9).
 - [x] M6.2 `.deb` via cargo-deb + release workflow. Acceptance: installs; `strokebind --version` works.
 - [x] M6.0 Compositor verification (manual, needs the user or VMs; runs after M6.2, gate before M6.3, approved P8): run `record` and `run` on Sway, GNOME Wayland, KDE, Hyprland and X11; check clicks, strokes and key-combo actions. Acceptance: results per desktop recorded in the README support matrix (feeds M5.9 and M6.3).
 - [ ] M6.3 README: pitch, 20s demo GIF, install, config example, support matrix, comparison table (docs/RESEARCH.md), FAQ. Acceptance: every claim maps to a tested feature; user approves the final text.
