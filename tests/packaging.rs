@@ -145,3 +145,31 @@ fn starter_config_passes_check_config() {
         String::from_utf8_lossy(&out.stderr)
     );
 }
+
+/// P9: the `package` CI job stands in for a fresh Ubuntu VM.
+#[test]
+fn ci_package_job_checks_deb_install_script_unit_and_rule_on_every_push() {
+    let ci = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).expect("ci.yml");
+    let job = ci
+        .split("\n  package:")
+        .nth(1)
+        .expect("ci.yml must define a `package` job");
+    for needed in [
+        "runs-on: ubuntu-latest",
+        "cargo deb --locked",
+        "dpkg-deb --info",
+        "dpkg -i",
+        "strokebind --version",
+        "STROKEBIND_NO_SYSTEMCTL=1",
+        ".local/bin/strokebind",
+        ".config/systemd/user/strokebind.service",
+        "systemd-analyze --user verify",
+        "udevadm verify",
+    ] {
+        assert!(job.contains(needed), "package job misses `{needed}`");
+    }
+    assert!(
+        !ci.contains("tags:"),
+        "package job must run on every push/PR"
+    );
+}
