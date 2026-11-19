@@ -3,6 +3,7 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+- `packaging/install.sh` installs the binary, a systemd user unit (`strokebind.service`) and a starter config under your home directory; `packaging/70-strokebind.rules` (udev, `uaccess`) gives the seat user access to `/dev/uinput` and mice, so no daemon runs as root. The script prints the one root step instead of running it.
 - README support matrix: per-app bindings on X11, Sway and Hyprland; KDE Plasma and GNOME use global bindings only.
 - On Hyprland, `run` reads the focused window's class over the Hyprland IPC socket at each trigger press, so `app` bindings fire there too.
 - On Sway, `run` reads the focused window (`app_id`, or the XWayland class) over the `SWAYSOCK` IPC at each trigger press, so `app` bindings fire there too.
