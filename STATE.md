@@ -1,17 +1,17 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
 Current milestone: M6
-Current task: M6.2
+Current task: M6.0
 Branch: m6-packaging
-Last session: M6.1 done (2026-11-19)
+Last session: M6.2 done (2026-11-19)
 ## Handoff
-Done: M6.1 packaging/ (strokebind.service user unit, 70-strokebind.rules uaccess, install.sh, config.example.toml); tests/packaging.rs.
-Next: M6.2 .deb via cargo-deb + release workflow (cargo-deb is a build tool; check deny/ARCHITECTURE allowed list, else proposal). Then M6.0 (manual), M6.3.
+Done: M6.2 cargo-deb metadata in Cargo.toml, packaging/{strokebind-deb.service,debian/postinst}, .github/workflows/release.yml; tests/deb.rs (static). .deb never built locally (cargo-deb not installed).
+Next: M6.0 is manual (user): then M6.3 README. If still blocked, /next stops at M6.0 gate; user decides (P-proposal or reorder).
 Fragile: a hung lookup delays one trigger press by <= 50 ms, then lookups are skipped until it answers; KDE Wayland verified by user, Sway and Hyprland adapters have only fake-socket tests (real sessions untested)/GNOME untested; key-combo action not in the user's hardware list. Reload polled only on strokes. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time.
 ## Decisions
 - Base: Rust; deps limited to docs/ARCHITECTURE.md allowed list; evdev grab + uinput forwarding so it works on every compositor; Dual license MIT OR Apache-2.0; MSRV 1.85.1: lowest passing version found by `cargo msrv find --min 1.70` (bisect; older toolchains fail on a dependency needing edition 2024).
 - Approved: approved P1: stroke trail overlay added as post-0.1 milestone M7 (5 tasks, branch m7-overlay); deps x11rb, smithay-client-toolkit, tiny-skia allowed for M7 only | approved P2: `feedback = "notify"` as M4.5 (no new deps). approved P3: M4.6 live-motion default (`freeze_pointer = false`, `click_slop_px = 6`, between-band swallowed); M3.3 now = freeze_pointer=true mode. Caveat: focus-follows-mouse may shift focus during live strokes | approved P4: M7.1 backend picker checks WAYLAND_DISPLAY before DISPLAY (XWayland); selection test added. approved P5: M6.0 compositor verification (Sway, GNOME, KDE, Hyprland, X11 -> README matrix) before M6.1 | approved P6: M5 = 8 tasks (app config, run wiring at press, backend picker, X11/Sway/Hyprland adapters, README matrix; KDE+GNOME global-only for 0.1). Deps: serde_json new, x11rb extended to M5; no zbus | approved P7: new M5.4 adapter timeout <= 50 ms (fallback = global, skip while a lookup hangs); old M5.4-M5.8 renumbered M5.5-M5.9.
-- approved P8: M6 order = M6.1, M6.2, then M6.0 (gate before M6.3); no tasks added; unverified desktops listed "untested" in README. M6.1: install.sh is per-user only (~/.local/bin, ~/.config/systemd/user), never sudo; prints the udev root step. Env hooks STROKEBIND_BIN, STROKEBIND_NO_SYSTEMCTL (tests). Unit WantedBy graphical-session.target, Restart=on-failure. Fresh Ubuntu VM test notes NOT done (needs a VM): pending with M6.0.
+- approved P8: M6 order = M6.1, M6.2, then M6.0 (gate before M6.3); no tasks added; unverified desktops listed "untested" in README. M6.2: cargo-deb is a cargo subcommand, not a crate dep (no allowed-list change); deb unit = user unit with /usr/bin path (test enforces). First real .deb build happens in CI on the first v* tag. M6.1: install.sh is per-user only (~/.local/bin, ~/.config/systemd/user), never sudo; prints the udev root step. Env hooks STROKEBIND_BIN, STROKEBIND_NO_SYSTEMCTL (tests). Unit WantedBy graphical-session.target, Restart=on-failure. Fresh Ubuntu VM test notes NOT done (needs a VM): pending with M6.0.
 - Review of M0: fixed unknown-field typos (deny_unknown_fields). Accepted: gates.rs checks strings only; CI msrv+deny jobs are the real verification.
 - M1: jitter filter skips points < min_len from last accepted; noise runs dropped then neighbours re-merged; tolerance = max total 45-degree steps, ties (incl. duplicate bindings) = Ambiguous; proptests use exact-grid paths (20px steps, jitter +-2).
 - M2.1: opens nodes with evdev Device::open (read-only, no grab); unreadable-only => PermissionDenied error with input-group/udev hint; other open failures skipped. Removed device::MODULE placeholder; layout test now references list_mice_in.

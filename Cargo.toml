@@ -35,3 +35,17 @@ print_stdout = "allow"
 [dev-dependencies]
 proptest = "1"
 tempfile = "3"
+
+[package.metadata.deb]
+maintainer = "Ivan Koskov"
+section = "utils"
+priority = "optional"
+extended-description = "Runs actions on mouse-stroke gestures, via evdev grab and uinput, on any Wayland compositor or X11."
+maintainer-scripts = "packaging/debian"
+assets = [
+    ["target/release/strokebind", "usr/bin/", "755"],
+    ["packaging/strokebind-deb.service", "usr/lib/systemd/user/strokebind.service", "644"],
+    ["packaging/70-strokebind.rules", "usr/lib/udev/rules.d/70-strokebind.rules", "644"],
+    ["packaging/config.example.toml", "usr/share/doc/strokebind/", "644"],
+    ["README.md", "usr/share/doc/strokebind/", "644"],
+]
