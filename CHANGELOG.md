@@ -3,6 +3,7 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+- README rewritten for launch: pitch, install, quick start, config examples (checked by tests), comparison table and FAQ; the demo GIF slot is still empty.
 - `.deb` package via cargo-deb (`cargo deb`): installs `/usr/bin/strokebind`, the systemd user unit, the udev rule (reloaded in `postinst`) and an example config; a `v*` tag runs `.github/workflows/release.yml`, which builds, installs and version-checks the package and attaches it to a GitHub release.
 - `packaging/install.sh` installs the binary, a systemd user unit (`strokebind.service`) and a starter config under your home directory; `packaging/70-strokebind.rules` (udev, `uaccess`) gives the seat user access to `/dev/uinput` and mice, so no daemon runs as root. The script prints the one root step instead of running it.
 - README support matrix: per-app bindings on X11, Sway and Hyprland; KDE Plasma and GNOME use global bindings only.
