@@ -109,7 +109,9 @@ fn input_region_is_empty_so_clicks_pass_through() {
 #[ignore = "needs an X11 display; shows a stroke for about a second"]
 fn x11_overlay_draws_demo_stroke() {
     let mut o = X11Overlay::new(TrailStyle::default()).unwrap();
-    o.begin().unwrap();
+    // Screen center, so the whole stroke (240 px right, 320 px down) stays visible.
+    let (w, h) = o.screen_size();
+    o.begin_at((f32::from(w / 2), f32::from(h / 2))).unwrap();
     for _ in 0..40 {
         o.motion(6, 2).unwrap();
         std::thread::sleep(std::time::Duration::from_millis(10));

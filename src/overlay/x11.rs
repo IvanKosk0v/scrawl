@@ -272,6 +272,29 @@ impl X11Overlay {
         Ok(overlay)
     }
 
+    /// The screen size in pixels (width, height).
+    pub fn screen_size(&self) -> (u16, u16) {
+        self.screen
+    }
+
+    /// Starts an empty trail at `start` (root coordinates) instead of the cursor position, maps
+    /// the window on first use and raises it.
+    pub fn begin_at(&mut self, start: (f32, f32)) -> Result<(), Error> {
+        self.trail = Trail::new(start);
+        self.set_shape(&[])?;
+        if !self.mapped {
+            self.conn.map_window(self.window).map_err(x11_err)?;
+            self.mapped = true;
+        }
+        self.conn
+            .configure_window(
+                self.window,
+                &ConfigureWindowAux::new().stack_mode(StackMode::ABOVE),
+            )
+            .map_err(x11_err)?;
+        self.conn.flush().map_err(x11_err)
+    }
+
     /// The overlay's X11 window id.
     pub fn window(&self) -> Window {
         self.window
@@ -323,19 +346,7 @@ impl Overlay for X11Overlay {
             .map_err(x11_err)?
             .reply()
             .map_err(x11_err)?;
-        self.trail = Trail::new((f32::from(p.root_x), f32::from(p.root_y)));
-        self.set_shape(&[])?;
-        if !self.mapped {
-            self.conn.map_window(self.window).map_err(x11_err)?;
-            self.mapped = true;
-        }
-        self.conn
-            .configure_window(
-                self.window,
-                &ConfigureWindowAux::new().stack_mode(StackMode::ABOVE),
-            )
-            .map_err(x11_err)?;
-        self.conn.flush().map_err(x11_err)
+        self.begin_at((f32::from(p.root_x), f32::from(p.root_y)))
     }
 
     fn motion(&mut self, dx: i32, dy: i32) -> Result<(), Error> {
