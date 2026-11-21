@@ -153,7 +153,8 @@ fn x11_err(e: impl std::fmt::Display) -> Error {
     Error::Overlay(format!("x11: {e}"))
 }
 
-/// The X11 trail overlay. Hidden (unmapped) until [`Overlay::begin`].
+/// The X11 trail overlay. Unmapped until the first [`Overlay::begin`]; afterwards hidden by an
+/// empty bounding shape.
 #[derive(Debug)]
 pub struct X11Overlay {
     conn: RustConnection,
@@ -163,6 +164,9 @@ pub struct X11Overlay {
     style: TrailStyle,
     trail: Trail,
     buf: Vec<u8>,
+    /// Mapped once at the first `begin`, then kept mapped: hiding is an empty shape, because
+    /// unmapping a full-screen window plays a compositor's close animation.
+    mapped: bool,
 }
 
 impl X11Overlay {
@@ -219,10 +223,16 @@ impl X11Overlay {
             style,
             trail: Trail::new((0.0, 0.0)),
             buf: Vec::new(),
+            mapped: false,
         };
         overlay.set_shape(&[])?;
         overlay.conn.flush().map_err(x11_err)?;
         Ok(overlay)
+    }
+
+    /// The overlay's X11 window id.
+    pub fn window(&self) -> Window {
+        self.window
     }
 
     fn set_shape(&self, rects: &[Rect]) -> Result<(), Error> {
@@ -273,7 +283,10 @@ impl Overlay for X11Overlay {
             .map_err(x11_err)?;
         self.trail = Trail::new((f32::from(p.root_x), f32::from(p.root_y)));
         self.set_shape(&[])?;
-        self.conn.map_window(self.window).map_err(x11_err)?;
+        if !self.mapped {
+            self.conn.map_window(self.window).map_err(x11_err)?;
+            self.mapped = true;
+        }
         self.conn
             .configure_window(
                 self.window,
@@ -290,7 +303,7 @@ impl Overlay for X11Overlay {
 
     fn end(&mut self) -> Result<(), Error> {
         self.trail.clear();
-        self.conn.unmap_window(self.window).map_err(x11_err)?;
+        self.set_shape(&[])?;
         self.conn.flush().map_err(x11_err)
     }
 }

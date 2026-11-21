@@ -120,3 +120,30 @@ fn x11_overlay_draws_demo_stroke() {
     std::thread::sleep(std::time::Duration::from_millis(300));
     o.end().unwrap();
 }
+
+#[test]
+#[ignore = "needs an X11 display; flashes a short stroke"]
+fn x11_overlay_end_hides_by_shape_without_unmapping() {
+    use x11rb::protocol::shape::{ConnectionExt as _, SK};
+    use x11rb::protocol::xproto::{ConnectionExt as _, MapState};
+
+    let mut o = X11Overlay::new(TrailStyle::default()).unwrap();
+    o.begin().unwrap();
+    o.motion(40, 40).unwrap();
+    o.end().unwrap();
+    // A second client sees the server state after the overlay's requests (they were flushed).
+    let (conn, _) = x11rb::connect(None).unwrap();
+    let attrs = conn
+        .get_window_attributes(o.window())
+        .unwrap()
+        .reply()
+        .unwrap();
+    // Unmapping would play a compositor's close animation on a full-screen window.
+    assert_eq!(attrs.map_state, MapState::VIEWABLE);
+    let shape = conn
+        .shape_get_rectangles(o.window(), SK::BOUNDING)
+        .unwrap()
+        .reply()
+        .unwrap();
+    assert!(shape.rectangles.is_empty());
+}
