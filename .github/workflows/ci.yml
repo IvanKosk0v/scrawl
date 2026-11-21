@@ -38,3 +38,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: EmbarkStudios/cargo-deny-action@v2
+
+  # Stands in for a fresh Ubuntu VM (P9). Real grab/uinput, udev + input group on a
+  # login and systemd session start stay manual.
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo install cargo-deb --locked
+      - run: cargo build --release --locked
+      - run: cargo deb --locked
+      - name: Install the .deb
+        run: |
+          deb=$(ls target/debian/strokebind_*.deb)
+          dpkg-deb --info "$deb"
+          dpkg-deb --contents "$deb"
+          sudo dpkg -i "$deb"
+          strokebind --version
+      - name: Per-user install.sh
+        run: |
+          STROKEBIND_NO_SYSTEMCTL=1 STROKEBIND_BIN=/usr/bin/strokebind ./packaging/install.sh
+          test -x ~/.local/bin/strokebind
+          test -f ~/.config/systemd/user/strokebind.service
+          ~/.local/bin/strokebind check-config ~/.config/strokebind/config.toml
+      - name: Verify unit and udev rule
+        run: |
+          systemd-analyze --user verify ~/.config/systemd/user/strokebind.service
+          udevadm verify packaging/70-strokebind.rules

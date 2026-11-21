@@ -1,0 +1,10 @@
+# strokebind starter config. Check it with: strokebind check-config <this file>
+trigger = "right"
+
+[[binding]]
+stroke = "L"
+action = { key = "alt+left" }
+
+[[binding]]
+stroke = "R"
+action = { key = "alt+right" }

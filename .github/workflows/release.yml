@@ -1,0 +1,29 @@
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  deb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo install cargo-deb --locked
+      - run: cargo deb --locked
+      - name: Inspect and install the package
+        run: |
+          deb=$(ls target/debian/strokebind_*.deb)
+          dpkg-deb --info "$deb"
+          dpkg-deb --contents "$deb"
+          sudo dpkg -i "$deb"
+          strokebind --version
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" target/debian/strokebind_*.deb --title "$GITHUB_REF_NAME" --generate-notes
