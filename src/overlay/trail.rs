@@ -30,6 +30,13 @@ impl Trail {
         self.points.clear();
     }
 
+    /// A copy with every point moved by `(dx, dy)` (e.g. into a smaller buffer's coordinates).
+    pub fn translated(&self, dx: f32, dy: f32) -> Trail {
+        Trail {
+            points: self.points.iter().map(|&(x, y)| (x + dx, y + dy)).collect(),
+        }
+    }
+
     /// The points, oldest first.
     pub fn points(&self) -> &[(f32, f32)] {
         &self.points
