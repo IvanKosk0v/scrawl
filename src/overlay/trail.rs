@@ -26,10 +26,22 @@ impl Trail {
     /// trail starts at the origin. Beyond [`MAX_TRAIL_POINTS`] the oldest point is dropped.
     pub fn push_delta(&mut self, dx: i32, dy: i32) {
         let (x, y) = self.points.last().copied().unwrap_or((0.0, 0.0));
+        self.push((x + dx as f32, y + dy as f32));
+    }
+
+    /// Appends the absolute point `p` (e.g. the real cursor position), unless it equals the last
+    /// point. Beyond [`MAX_TRAIL_POINTS`] the oldest point is dropped.
+    pub fn push_point(&mut self, p: (f32, f32)) {
+        if self.points.last() != Some(&p) {
+            self.push(p);
+        }
+    }
+
+    fn push(&mut self, p: (f32, f32)) {
         if self.points.len() >= MAX_TRAIL_POINTS {
             self.points.remove(0);
         }
-        self.points.push((x + dx as f32, y + dy as f32));
+        self.points.push(p);
     }
 
     /// Removes every point.

@@ -135,6 +135,16 @@ pub fn mask_rects(buf: &[u8], width: u16, height: u16, origin: (i16, i16)) -> Ve
     rects
 }
 
+/// Extends `trail` by one motion: to the real cursor position `pointer` when known (raw deltas
+/// ignored, since the X server applies pointer acceleration and stops the cursor at screen
+/// edges), else by the raw delta `(dx, dy)`.
+pub fn track(trail: &mut Trail, dx: i32, dy: i32, pointer: Option<(i16, i16)>) {
+    match pointer {
+        Some((x, y)) => trail.push_point((f32::from(x), f32::from(y))),
+        None => trail.push_delta(dx, dy),
+    }
+}
+
 /// The trail color as a 24-bit TrueColor pixel value (alpha ignored: without a compositor the
 /// shape, not alpha, decides what is visible).
 pub fn rgb_pixel(rgba: [u8; 4]) -> u32 {
@@ -208,6 +218,9 @@ pub struct X11Overlay {
     /// Mapped once at the first `begin`, then kept mapped: hiding is an empty shape, because
     /// unmapping a full-screen window plays a compositor's close animation.
     mapped: bool,
+    /// Set by `begin` (motions follow the real cursor via QueryPointer); cleared by `begin_at`
+    /// (motions add raw deltas to the given start).
+    follow_pointer: bool,
 }
 
 impl X11Overlay {
@@ -266,6 +279,7 @@ impl X11Overlay {
             trail: Trail::new((0.0, 0.0)),
             buf: Vec::new(),
             mapped: false,
+            follow_pointer: false,
         };
         overlay.set_shape(&[])?;
         overlay.conn.flush().map_err(x11_err)?;
@@ -278,8 +292,9 @@ impl X11Overlay {
     }
 
     /// Starts an empty trail at `start` (root coordinates) instead of the cursor position, maps
-    /// the window on first use and raises it.
+    /// the window on first use and raises it. Later motions add their raw deltas to `start`.
     pub fn begin_at(&mut self, start: (f32, f32)) -> Result<(), Error> {
+        self.follow_pointer = false;
         self.trail = Trail::new(start);
         self.set_shape(&[])?;
         if !self.mapped {
@@ -293,6 +308,11 @@ impl X11Overlay {
             )
             .map_err(x11_err)?;
         self.conn.flush().map_err(x11_err)
+    }
+
+    /// True after `begin` (motions follow the real cursor), false after `begin_at`.
+    pub fn follows_pointer(&self) -> bool {
+        self.follow_pointer
     }
 
     /// The overlay's X11 window id.
@@ -346,11 +366,26 @@ impl Overlay for X11Overlay {
             .map_err(x11_err)?
             .reply()
             .map_err(x11_err)?;
-        self.begin_at((f32::from(p.root_x), f32::from(p.root_y)))
+        self.begin_at((f32::from(p.root_x), f32::from(p.root_y)))?;
+        self.follow_pointer = true;
+        Ok(())
     }
 
+    /// After `begin`, draws to the real cursor position (QueryPointer); after `begin_at`, adds
+    /// the raw delta.
     fn motion(&mut self, dx: i32, dy: i32) -> Result<(), Error> {
-        self.trail.push_delta(dx, dy);
+        let pointer = if self.follow_pointer {
+            let p = self
+                .conn
+                .query_pointer(self.root)
+                .map_err(x11_err)?
+                .reply()
+                .map_err(x11_err)?;
+            Some((p.root_x, p.root_y))
+        } else {
+            None
+        };
+        track(&mut self.trail, dx, dy, pointer);
         self.redraw()
     }
 
