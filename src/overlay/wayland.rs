@@ -1,15 +1,18 @@
 //! Wayland overlay backend: a wlr-layer-shell surface on the `overlay` layer, anchored to every
 //! edge, click-through (empty input region) and drawn with a full-surface transparent shm buffer.
 //! Wayland clients never learn the cursor position, so the trail starts at the surface center.
-//! The surface is mapped once (first [`Overlay::begin`]) and hidden with a transparent buffer, so
-//! compositors with layer animations do not play them per stroke. Compositors without
+//! With one output the surface is mapped once (first [`Overlay::begin`]) and hidden with a
+//! transparent buffer, so compositors with layer animations do not play them per stroke. With
+//! several outputs, or after the compositor closed it, each `begin` creates a new surface, which
+//! the compositor puts on the focused output ([`recreate_surface`]). Buffers follow the output's
+//! integer scale ([`buffer_size`]). Compositors without
 //! wlr-layer-shell (GNOME) get [`no_layer_shell_error`]; `feedback = "notify"` covers them.
 
 use smithay_client_toolkit::compositor::{CompositorHandler, CompositorState, Region};
 use smithay_client_toolkit::output::{OutputHandler, OutputState};
 use smithay_client_toolkit::reexports::client::globals::registry_queue_init;
 use smithay_client_toolkit::reexports::client::protocol::{wl_output, wl_shm, wl_surface};
-use smithay_client_toolkit::reexports::client::{Connection, EventQueue, QueueHandle};
+use smithay_client_toolkit::reexports::client::{Connection, EventQueue, Proxy, QueueHandle};
 use smithay_client_toolkit::registry::{ProvidesRegistryState, RegistryState};
 use smithay_client_toolkit::shell::wlr_layer::{
     Anchor, KeyboardInteractivity, Layer, LayerShell, LayerShellHandler, LayerSurface,
@@ -75,6 +78,23 @@ pub fn rgba_to_argb8888(buf: &mut [u8]) {
     }
 }
 
+/// Buffer size in pixels for a surface of `logical` size at integer `scale` (below 1 = 1).
+/// `None` when the size, the shm stride (`width * 4`) or the byte size would not fit an `i32`.
+pub fn buffer_size(logical: (u32, u32), scale: i32) -> Option<(u32, u32)> {
+    let s = u32::try_from(scale.max(1)).ok()?;
+    let (w, h) = (logical.0.checked_mul(s)?, logical.1.checked_mul(s)?);
+    let max = u64::from(i32::MAX.unsigned_abs());
+    let fits = u64::from(w) * 4 <= max && u64::from(w) * u64::from(h) * 4 <= max;
+    fits.then_some((w, h))
+}
+
+/// Whether [`Overlay::begin`] must replace the layer surface: with several `outputs` the
+/// compositor then places the new one on the focused output; a `closed` one (e.g. its output
+/// was unplugged) cannot be drawn on.
+pub fn recreate_surface(outputs: usize, closed: bool) -> bool {
+    closed || outputs > 1
+}
+
 /// The error for compositors without wlr-layer-shell.
 pub fn no_layer_shell_error() -> Error {
     Error::Overlay(
@@ -96,6 +116,8 @@ struct State {
     /// Size from the latest layer-surface configure.
     size: Option<(u32, u32)>,
     closed: bool,
+    /// Integer buffer scale of the current surface (1 until the compositor says otherwise).
+    scale: i32,
 }
 
 /// The Wayland trail overlay.
@@ -103,7 +125,10 @@ pub struct WaylandOverlay {
     conn: Connection,
     queue: EventQueue<State>,
     state: State,
-    layer: LayerSurface,
+    compositor: CompositorState,
+    layer_shell: LayerShell,
+    /// `None` only between dropping a surface and configuring its replacement.
+    layer: Option<LayerSurface>,
     pool: SlotPool,
     /// Last attached buffer, kept alive until the compositor releases it.
     buffer: Option<Buffer>,
@@ -125,52 +150,71 @@ impl WaylandOverlay {
     /// its first configure. Fails without wlr-layer-shell ([`no_layer_shell_error`]).
     pub fn new(style: TrailStyle) -> Result<Self, Error> {
         let conn = Connection::connect_to_env().map_err(wl_err)?;
-        let (globals, mut queue) = registry_queue_init::<State>(&conn).map_err(wl_err)?;
+        let (globals, queue) = registry_queue_init::<State>(&conn).map_err(wl_err)?;
         let qh = queue.handle();
         let compositor = CompositorState::bind(&globals, &qh).map_err(wl_err)?;
         let layer_shell = LayerShell::bind(&globals, &qh).map_err(|_| no_layer_shell_error())?;
         let shm = Shm::bind(&globals, &qh).map_err(wl_err)?;
-
-        let s = layer_settings();
-        let surface = compositor.create_surface(&qh);
-        let layer =
-            layer_shell.create_layer_surface(&qh, surface, s.layer, Some(s.namespace), None);
-        layer.set_anchor(s.anchor);
-        layer.set_exclusive_zone(s.exclusive_zone);
-        layer.set_keyboard_interactivity(s.keyboard);
-        layer.set_size(0, 0);
-        let region = Region::new(&compositor).map_err(wl_err)?;
-        for (x, y, w, h) in input_region_rects() {
-            region.add(x, y, w, h);
-        }
-        layer.set_input_region(Some(region.wl_region()));
-        layer.commit();
-
-        let mut state = State {
+        let state = State {
             registry: RegistryState::new(&globals),
             outputs: OutputState::new(&globals, &qh),
             shm,
             size: None,
             closed: false,
+            scale: 1,
         };
-        while state.size.is_none() {
-            if state.closed {
-                return Err(wl_err("layer surface closed before its first configure"));
-            }
-            queue.blocking_dispatch(&mut state).map_err(wl_err)?;
-        }
-        let (w, h) = state.size.unwrap_or((1, 1));
-        let pool = SlotPool::new(w as usize * h as usize * 4, &state.shm).map_err(wl_err)?;
-        Ok(Self {
+        let pool = SlotPool::new(4, &state.shm).map_err(wl_err)?;
+        let mut overlay = Self {
             conn,
             queue,
             state,
-            layer,
+            compositor,
+            layer_shell,
+            layer: None,
             pool,
             buffer: None,
             style,
             trail: Trail::new((0.0, 0.0)),
-        })
+        };
+        overlay.create_layer()?;
+        Ok(overlay)
+    }
+
+    /// Drops the current layer surface (it shows only a transparent buffer between strokes) and
+    /// creates a new one without an output, so the compositor picks the focused one; waits for
+    /// its first configure.
+    fn create_layer(&mut self) -> Result<(), Error> {
+        self.layer = None;
+        self.buffer = None;
+        self.state.size = None;
+        self.state.closed = false;
+        self.state.scale = 1;
+        let qh = self.queue.handle();
+        let s = layer_settings();
+        let surface = self.compositor.create_surface(&qh);
+        let layer =
+            self.layer_shell
+                .create_layer_surface(&qh, surface, s.layer, Some(s.namespace), None);
+        layer.set_anchor(s.anchor);
+        layer.set_exclusive_zone(s.exclusive_zone);
+        layer.set_keyboard_interactivity(s.keyboard);
+        layer.set_size(0, 0);
+        let region = Region::new(&self.compositor).map_err(wl_err)?;
+        for (x, y, w, h) in input_region_rects() {
+            region.add(x, y, w, h);
+        }
+        layer.set_input_region(Some(region.wl_region()));
+        layer.commit();
+        self.layer = Some(layer);
+        while self.state.size.is_none() {
+            if self.state.closed {
+                return Err(wl_err("layer surface closed before its first configure"));
+            }
+            self.queue
+                .blocking_dispatch(&mut self.state)
+                .map_err(wl_err)?;
+        }
+        Ok(())
     }
 
     /// Surface size from the latest configure.
@@ -178,31 +222,34 @@ impl WaylandOverlay {
         self.state.size.unwrap_or((1, 1))
     }
 
-    /// Renders the current trail (fewer than two points = fully transparent) into a new buffer
-    /// and commits it.
+    /// Renders the current trail (fewer than two points = fully transparent) into a new buffer at
+    /// the surface's scale and commits it. A closed surface is skipped until the next `begin`.
     fn present(&mut self) -> Result<(), Error> {
         self.pump()?;
-        if self.state.closed {
-            return Err(wl_err("layer surface was closed by the compositor"));
-        }
-        let (w, h) = self.size();
+        let Some(layer) = self.layer.as_ref().filter(|_| !self.state.closed) else {
+            return Ok(());
+        };
+        let scale = self.state.scale.max(1);
+        let (w, h) = buffer_size(self.size(), scale).ok_or_else(|| wl_err("surface too large"))?;
         let (wi, hi) = (
             i32::try_from(w).map_err(wl_err)?,
             i32::try_from(h).map_err(wl_err)?,
         );
-        let stride = wi
-            .checked_mul(4)
-            .ok_or_else(|| wl_err("surface too wide"))?;
         let (buffer, canvas) = self
             .pool
-            .create_buffer(wi, hi, stride, wl_shm::Format::Argb8888)
+            .create_buffer(wi, hi, wi * 4, wl_shm::Format::Argb8888)
             .map_err(wl_err)?;
-        render(&self.trail, &self.style, canvas, w, h)?;
+        let f = scale as f32;
+        render(&self.trail.scaled(f), &self.style.scaled(f), canvas, w, h)?;
         rgba_to_argb8888(canvas);
-        let surface = self.layer.wl_surface();
+        let surface = layer.wl_surface();
+        // set_buffer_scale exists from wl_surface version 3; older ones stay at scale 1.
+        if surface.version() >= 3 {
+            surface.set_buffer_scale(scale);
+        }
         buffer.attach_to(surface).map_err(wl_err)?;
         surface.damage_buffer(0, 0, wi, hi);
-        self.layer.commit();
+        layer.commit();
         self.buffer = Some(buffer);
         self.pump()
     }
@@ -223,6 +270,10 @@ impl WaylandOverlay {
 
 impl Overlay for WaylandOverlay {
     fn begin(&mut self) -> Result<(), Error> {
+        self.pump()?;
+        if recreate_surface(self.state.outputs.outputs().count(), self.state.closed) {
+            self.create_layer()?;
+        }
         self.trail = Trail::new(center(self.size()));
         self.present()
     }
@@ -244,8 +295,9 @@ impl CompositorHandler for State {
         _: &Connection,
         _: &QueueHandle<Self>,
         _: &wl_surface::WlSurface,
-        _: i32,
+        new_factor: i32,
     ) {
+        self.scale = new_factor.max(1);
     }
 
     fn transform_changed(

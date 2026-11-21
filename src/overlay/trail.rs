@@ -37,6 +37,13 @@ impl Trail {
         }
     }
 
+    /// A copy with every point multiplied by `s` (logical pixels into a scale-`s` buffer).
+    pub fn scaled(&self, s: f32) -> Trail {
+        Trail {
+            points: self.points.iter().map(|&(x, y)| (x * s, y * s)).collect(),
+        }
+    }
+
     /// The points, oldest first.
     pub fn points(&self) -> &[(f32, f32)] {
         &self.points
@@ -50,6 +57,16 @@ pub struct TrailStyle {
     pub width_px: f32,
     /// Straight (not premultiplied) RGBA color.
     pub rgba: [u8; 4],
+}
+
+impl TrailStyle {
+    /// The same style for a scale-`s` buffer: the line width multiplied by `s`, same color.
+    pub fn scaled(&self, s: f32) -> TrailStyle {
+        TrailStyle {
+            width_px: self.width_px * s,
+            rgba: self.rgba,
+        }
+    }
 }
 
 impl Default for TrailStyle {

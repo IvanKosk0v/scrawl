@@ -1,14 +1,53 @@
-//! M7.3: non-protocol logic of the Wayland (wlr-layer-shell) overlay backend.
+//! M7.3/M7.5: non-protocol logic of the Wayland (wlr-layer-shell) overlay backend.
 //! The surface itself: `cargo test --test overlay_wayland -- --ignored` on Sway, Hyprland or KDE
 //! (shows a stroke from screen center for about a second, no grab).
 
 use smithay_client_toolkit::shell::wlr_layer::{Anchor, KeyboardInteractivity, Layer};
 use strokebind::overlay::trail::TrailStyle;
 use strokebind::overlay::wayland::{
-    center, input_region_rects, layer_settings, no_layer_shell_error, rgba_to_argb8888,
-    WaylandOverlay, LAYER_NAMESPACE,
+    buffer_size, center, input_region_rects, layer_settings, no_layer_shell_error,
+    recreate_surface, rgba_to_argb8888, WaylandOverlay, LAYER_NAMESPACE,
 };
 use strokebind::overlay::Overlay;
+
+#[test]
+fn buffer_size_multiplies_the_logical_size_by_the_scale() {
+    assert_eq!(buffer_size((1920, 1080), 1), Some((1920, 1080)));
+    assert_eq!(buffer_size((1920, 1080), 2), Some((3840, 2160)));
+    assert_eq!(buffer_size((100, 50), 3), Some((300, 150)));
+}
+
+#[test]
+fn buffer_size_treats_a_non_positive_scale_as_one() {
+    assert_eq!(buffer_size((640, 480), 0), Some((640, 480)));
+    assert_eq!(buffer_size((640, 480), -2), Some((640, 480)));
+}
+
+#[test]
+fn buffer_size_rejects_overflow() {
+    assert_eq!(buffer_size((u32::MAX, 1), 2), None);
+    // The shm stride (width * 4) and the byte size must fit too.
+    assert_eq!(buffer_size((i32::MAX as u32 / 4 + 1, 1), 1), None);
+    assert_eq!(buffer_size((65536, 65536), 1), None);
+}
+
+#[test]
+fn single_output_keeps_its_surface() {
+    assert!(!recreate_surface(1, false));
+    assert!(!recreate_surface(0, false));
+}
+
+#[test]
+fn several_outputs_recreate_the_surface_on_the_focused_one() {
+    assert!(recreate_surface(2, false));
+    assert!(recreate_surface(3, false));
+}
+
+#[test]
+fn a_closed_surface_is_recreated() {
+    assert!(recreate_surface(1, true));
+    assert!(recreate_surface(2, true));
+}
 
 #[test]
 fn center_of_even_and_odd_sizes() {

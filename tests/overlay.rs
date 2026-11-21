@@ -173,3 +173,39 @@ proptest! {
         prop_assert!(render(&trail(&points), &style(), &mut buf, W, H).is_ok());
     }
 }
+
+// M7.5: HiDPI. The trail lives in logical pixels; a scale-`s` buffer gets every point and the
+// line width multiplied by `s`.
+
+#[test]
+fn scaled_trail_multiplies_every_point() {
+    let t = trail(&[(1, 2), (5, -3)]).scaled(2.0);
+    assert_eq!(t.points(), &[(2.0, 4.0), (10.0, -6.0)]);
+}
+
+#[test]
+fn scaled_style_multiplies_the_width_only() {
+    let s = style().scaled(3.0);
+    assert_eq!(s.width_px, 12.0);
+    assert_eq!(s.rgba, style().rgba);
+}
+
+#[test]
+fn scale_two_draws_at_doubled_position_and_twice_as_thick() {
+    // Logical 32x32 surface, line at logical y = 16, width 4: physical y = 32, width 8 (28..36).
+    let mut hi = buffer();
+    let logical = trail(&[(4, 16), (28, 16)]);
+    render(&logical.scaled(2.0), &style().scaled(2.0), &mut hi, W, H).unwrap();
+    assert_eq!(px(&hi, 32, 32), [255, 0, 0, 255], "doubled position");
+    assert_eq!(px(&hi, 32, 16)[3], 0, "the unscaled position stays empty");
+    assert_ne!(
+        px(&hi, 32, 35)[3],
+        0,
+        "3 px off the center: inside an 8 px line"
+    );
+
+    // The same line unscaled (width 4: 30..34) leaves that pixel empty.
+    let mut lo = buffer();
+    render(&trail(&[(8, 32), (56, 32)]), &style(), &mut lo, W, H).unwrap();
+    assert_eq!(px(&lo, 32, 35)[3], 0);
+}

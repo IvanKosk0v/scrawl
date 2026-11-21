@@ -140,7 +140,7 @@ touchpad gestures (see libinput-gestures).
 
 **Why are per-app bindings missing on KDE and GNOME?** strokebind has no focused-window adapter for them yet. Global bindings work there; per-app support is a 0.1 limitation.
 
-**Where does the trail (`overlay = true`) work?** On X11 and on Wayland compositors with wlr-layer-shell (Sway, Hyprland, KDE). The trail is click-through. On Wayland it starts at the screen center because there is no global cursor position. GNOME has no layer-shell, so the trail is unavailable there and strokebind prints `overlay disabled`; use `feedback = "notify"` instead. Changing `overlay` needs a restart.
+**Where does the trail (`overlay = true`) work?** On X11 and on Wayland compositors with wlr-layer-shell (Sway, Hyprland, KDE). The trail is click-through. On Wayland it starts at the center of the focused monitor (there is no global cursor position) and is drawn at that monitor's scale; on X11 one window covers every monitor and the trail starts at the cursor. GNOME has no layer-shell, so the trail is unavailable there and strokebind prints `overlay disabled`; use `feedback = "notify"` instead. Changing `overlay` needs a restart.
 
 **picom animates or shadows the trail. How do I stop that?** Exclude the overlay window by its class. For picom up to v11, add `class_g = 'strokebind-overlay'` to `animation-exclude`, `fade-exclude` and `shadow-exclude`. For picom v12 and later, use a `rules` entry with `match = "class_g = 'strokebind-overlay'"` that turns these effects off.
 

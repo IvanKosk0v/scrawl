@@ -59,4 +59,4 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 - [x] M7.2 X11 backend: transparent click-through override-redirect window (x11rb shape+xfixes), cursor start from QueryPointer; Shape-masked trail without a compositor. Acceptance: tests of geometry/input-region logic; manual check on bspwm.
 - [x] M7.3 Wayland backend: wlr-layer-shell (smithay-client-toolkit); trail starts at screen center where no cursor position is available. Acceptance: tests of non-protocol logic; manual check on Sway/Hyprland/KDE; GNOME documented as notify-only (M4.5).
 - [x] M7.4 Render thread fed by the event loop, never blocking input forwarding. Acceptance: fake-overlay test proving the loop does not block.
-- [ ] M7.5 Multi-output and HiDPI. Acceptance: tests of scaling/output mapping.
+- [x] M7.5 Multi-output and HiDPI. Acceptance: tests of scaling/output mapping.
