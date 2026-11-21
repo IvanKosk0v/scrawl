@@ -150,11 +150,26 @@ fn wrong_buffer_size_is_an_error() {
     assert!(render(&trail(&[(0, 0), (5, 5)]), &style(), &mut empty, 0, 0).is_err());
 }
 
+#[test]
+fn invalid_width_is_an_error() {
+    for width_px in [0.0, -1.0, f32::NAN, f32::INFINITY] {
+        let mut buf = buffer();
+        let bad = TrailStyle {
+            width_px,
+            ..style()
+        };
+        assert!(
+            render(&trail(&[(8, 32), (56, 32)]), &bad, &mut buf, W, H).is_err(),
+            "width {width_px} accepted"
+        );
+    }
+}
+
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(256))]
     #[test]
     fn render_never_panics(points in prop::collection::vec((-100_000i32..100_000, -100_000i32..100_000), 0..40)) {
         let mut buf = buffer();
-        let _ = render(&trail(&points), &style(), &mut buf, W, H);
+        prop_assert!(render(&trail(&points), &style(), &mut buf, W, H).is_ok());
     }
 }

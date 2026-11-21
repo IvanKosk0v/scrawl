@@ -56,7 +56,8 @@ impl Default for TrailStyle {
 
 /// Clears `buf` (premultiplied RGBA, `width * height * 4` bytes, row-major) to transparent and
 /// draws `trail` as an anti-aliased polyline with round caps and joins. Fewer than two points
-/// draw nothing.
+/// draw nothing. Errors when the buffer size does not match or `style.width_px` is not a finite
+/// positive number (tiny-skia would silently draw nothing).
 pub fn render(
     trail: &Trail,
     style: &TrailStyle,
@@ -64,6 +65,12 @@ pub fn render(
     width: u32,
     height: u32,
 ) -> Result<(), Error> {
+    if !(style.width_px.is_finite() && style.width_px > 0.0) {
+        return Err(Error::Overlay(format!(
+            "trail width must be a positive number, got {}",
+            style.width_px
+        )));
+    }
     let len = buf.len();
     let mut pixmap = PixmapMut::from_bytes(buf, width, height).ok_or_else(|| {
         Error::Overlay(format!(
