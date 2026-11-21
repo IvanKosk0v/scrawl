@@ -1,12 +1,12 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
 Current milestone: M6
-Current task: M6.5 (M6.4 done 2026-11-21)
+Current task: M6 complete; next is /milestone (verify M6, merge)
 Branch: m6-packaging
 Last session: M6.0 done, all five desktops verified by user (2026-11-19)
 ## Handoff
-Done: M6.4 version 0.1.0 + repository, CHANGELOG [0.1.0], SECURITY advisory link (private reporting on), tests/release.rs (7 tests). Tag v0.1.0 pushed by user; Release workflow + CI green; `package` job green.
-Next: M6.5 launch checklist file with final post texts (Show HN, r/linux, r/unixporn, r/rust, compositor subs, AUR). Then /milestone for M6 (mark draft PR ready, merge).
+Done: M6.5 docs/LAUNCH.md: checklist + final texts for Show HN, r/linux, r/unixporn, r/rust, 4 compositor subs, AUR PKGBUILD draft (unbuilt); tests/launch.rs (8 tests); check.sh OK.
+Next: /milestone for M6 (user marks draft PR ready and merges after confirming). Before posting: user does the Before-posting boxes in docs/LAUNCH.md; PKGBUILD must be built in a clean chroot first.
 Fragile: real grab/uinput, udev+input group on login, systemd session start stay manual. A hung lookup delays one trigger press by <= 50 ms, then lookups are skipped until it answers; all five desktops verified by user; key-combo action not in the user's hardware list. Reload polled only on strokes. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time. README: .deb install line assumes a GitHub release (exists after M6.4); comparison rows from RESEARCH.md not re-checked. Source video kept outside the repo (~/notes/strokebind-demo.mp4).
 ## Decisions
 - Base: Rust; deps limited to docs/ARCHITECTURE.md allowed list; evdev grab + uinput forwarding so it works on every compositor; Dual license MIT OR Apache-2.0; MSRV 1.85.1: lowest passing version found by `cargo msrv find --min 1.70` (bisect; older toolchains fail on a dependency needing edition 2024).
