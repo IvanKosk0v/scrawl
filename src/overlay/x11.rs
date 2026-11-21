@@ -6,10 +6,11 @@ use x11rb::connection::{Connection, RequestConnection};
 use x11rb::protocol::shape::{self, ConnectionExt as _, SK, SO};
 use x11rb::protocol::xfixes::{self, ConnectionExt as _};
 use x11rb::protocol::xproto::{
-    ClipOrdering, ConfigureWindowAux, ConnectionExt as _, CreateWindowAux, Rectangle, StackMode,
-    Window, WindowClass,
+    AtomEnum, ClipOrdering, ConfigureWindowAux, ConnectionExt as _, CreateWindowAux, PropMode,
+    Rectangle, StackMode, Window, WindowClass,
 };
 use x11rb::rust_connection::RustConnection;
+use x11rb::wrapper::ConnectionExt as _;
 use x11rb::COPY_DEPTH_FROM_PARENT;
 
 use super::trail::{render, Trail, TrailStyle};
@@ -43,6 +44,10 @@ impl From<Rect> for Rectangle {
 fn protocol_rects(rects: &[Rect]) -> Vec<Rectangle> {
     rects.iter().copied().map(Rectangle::from).collect()
 }
+
+/// `WM_CLASS` of the overlay window (`instance\0class\0`), so compositor rules can match it,
+/// e.g. picom `animation-exclude = [ "class_g = 'strokebind-overlay'" ]`.
+pub const OVERLAY_WM_CLASS: &[u8] = b"strokebind-overlay\0strokebind-overlay\0";
 
 /// Alpha at or above which a rendered pixel is part of the shape (anti-aliased edges are cut).
 const MASK_ALPHA: u8 = 128;
@@ -153,6 +158,42 @@ fn x11_err(e: impl std::fmt::Display) -> Error {
     Error::Overlay(format!("x11: {e}"))
 }
 
+/// Gives the window a stable identity for compositor rules: `WM_CLASS`, `WM_NAME` and
+/// `_NET_WM_WINDOW_TYPE_DND` (a transient, non-interactive overlay type).
+fn tag_window(conn: &RustConnection, window: Window) -> Result<(), Error> {
+    let atom = |name: &[u8]| -> Result<u32, Error> {
+        Ok(conn
+            .intern_atom(false, name)
+            .map_err(x11_err)?
+            .reply()
+            .map_err(x11_err)?
+            .atom)
+    };
+    let (wm_type, dnd) = (
+        atom(b"_NET_WM_WINDOW_TYPE")?,
+        atom(b"_NET_WM_WINDOW_TYPE_DND")?,
+    );
+    conn.change_property8(
+        PropMode::REPLACE,
+        window,
+        AtomEnum::WM_CLASS,
+        AtomEnum::STRING,
+        OVERLAY_WM_CLASS,
+    )
+    .map_err(x11_err)?;
+    conn.change_property8(
+        PropMode::REPLACE,
+        window,
+        AtomEnum::WM_NAME,
+        AtomEnum::STRING,
+        b"strokebind overlay",
+    )
+    .map_err(x11_err)?;
+    conn.change_property32(PropMode::REPLACE, window, wm_type, AtomEnum::ATOM, &[dnd])
+        .map_err(x11_err)?;
+    Ok(())
+}
+
 /// The X11 trail overlay. Unmapped until the first [`Overlay::begin`]; afterwards hidden by an
 /// empty bounding shape.
 #[derive(Debug)]
@@ -209,6 +250,7 @@ impl X11Overlay {
             &window_attributes(&style),
         )
         .map_err(x11_err)?;
+        tag_window(&conn, window)?;
         let region = conn.generate_id().map_err(x11_err)?;
         conn.xfixes_create_region(region, &protocol_rects(&input_region()))
             .map_err(x11_err)?;

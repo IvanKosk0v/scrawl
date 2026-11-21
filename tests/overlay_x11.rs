@@ -5,6 +5,7 @@
 use strokebind::overlay::trail::{Trail, TrailStyle};
 use strokebind::overlay::x11::{
     input_region, mask_rects, rgb_pixel, trail_bbox, window_attributes, Rect, X11Overlay,
+    OVERLAY_WM_CLASS,
 };
 use strokebind::overlay::Overlay;
 
@@ -146,4 +147,47 @@ fn x11_overlay_end_hides_by_shape_without_unmapping() {
         .reply()
         .unwrap();
     assert!(shape.rectangles.is_empty());
+}
+
+#[test]
+fn overlay_wm_class_is_strokebind_overlay() {
+    let id = strokebind::x11::parse_wm_class(OVERLAY_WM_CLASS).unwrap();
+    assert_eq!(id.as_str(), "strokebind-overlay");
+}
+
+#[test]
+#[ignore = "needs an X11 display"]
+fn x11_overlay_window_is_tagged_for_compositor_rules() {
+    use x11rb::protocol::xproto::{AtomEnum, ConnectionExt as _};
+
+    let o = X11Overlay::new(TrailStyle::default()).unwrap();
+    let (conn, _) = x11rb::connect(None).unwrap();
+    let class = conn
+        .get_property(
+            false,
+            o.window(),
+            AtomEnum::WM_CLASS,
+            AtomEnum::STRING,
+            0,
+            64,
+        )
+        .unwrap()
+        .reply()
+        .unwrap();
+    assert_eq!(class.value, OVERLAY_WM_CLASS);
+    let atom = |name: &[u8]| conn.intern_atom(false, name).unwrap().reply().unwrap().atom;
+    let ty = conn
+        .get_property(
+            false,
+            o.window(),
+            atom(b"_NET_WM_WINDOW_TYPE"),
+            AtomEnum::ATOM,
+            0,
+            8,
+        )
+        .unwrap()
+        .reply()
+        .unwrap();
+    let types: Vec<u32> = ty.value32().unwrap().collect();
+    assert_eq!(types, vec![atom(b"_NET_WM_WINDOW_TYPE_DND")]);
 }
