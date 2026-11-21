@@ -3,6 +3,7 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+- Stroke trail overlay: `overlay = true` draws the stroke while the trigger is held, on X11 and on wlr-layer-shell Wayland compositors (Sway, Hyprland, KDE; not GNOME). Drawing runs on its own thread and never delays mouse input.
 - Arch/Artix package: `packaging/arch/PKGBUILD` (`cd packaging/arch && makepkg -si`) builds strokebind from the release tag and installs the binary, udev rule, user unit, example config and licenses.
 
 ## [0.1.0] - 2026-11-21

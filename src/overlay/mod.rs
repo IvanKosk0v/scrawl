@@ -8,6 +8,8 @@ use std::ffi::OsString;
 use crate::backend::{display_server, DisplayServer};
 use crate::error::Error;
 
+pub mod feed;
+pub mod thread;
 pub mod trail;
 pub mod wayland;
 pub mod x11;

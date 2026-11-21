@@ -259,6 +259,30 @@ fn resolve_carries_feedback() {
 }
 
 #[test]
+fn overlay_defaults_to_off_and_parses() {
+    let cfg = Config::parse("trigger = \"right\"\n").expect("valid");
+    assert!(!cfg.overlay);
+    let cfg = Config::parse("trigger = \"right\"\noverlay = true\n").expect("valid");
+    assert!(cfg.overlay);
+}
+
+#[test]
+fn resolve_carries_overlay() {
+    let src = format!("overlay = true\n{PROFILES}");
+    let cfg = Config::parse(&src).expect("valid");
+    assert!(cfg.resolve("trackball").overlay);
+    assert!(cfg.resolve("other").overlay);
+}
+
+#[test]
+fn overlay_is_global_only() {
+    let (line, msg) =
+        config_error("trigger = \"right\"\n\n[[profile]]\ndevice = \"x\"\noverlay = true\n");
+    assert!(line.is_some(), "message: {msg}");
+    assert!(msg.contains("overlay"), "message: {msg}");
+}
+
+#[test]
 fn live_motion_defaults() {
     let cfg = Config::parse("trigger = \"right\"\n").expect("valid");
     assert!(!cfg.freeze_pointer);

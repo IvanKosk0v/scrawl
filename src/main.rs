@@ -15,6 +15,11 @@ use strokebind::device::virtual_mouse::{MouseCaps, VirtualMouse};
 use strokebind::error::Error;
 use strokebind::focus::Focused;
 use strokebind::hyprland::{socket_path, HyprlandAdapter};
+use strokebind::overlay::thread::{spawn, OverlayHandle};
+use strokebind::overlay::trail::TrailStyle;
+use strokebind::overlay::wayland::WaylandOverlay;
+use strokebind::overlay::x11::X11Overlay;
+use strokebind::overlay::{overlay_backend, Overlay, OverlayBackend};
 use strokebind::passthrough::{Mode, Passthrough};
 use strokebind::reload::ConfigWatcher;
 use strokebind::stroke_loop::{run_events, LoopParams};
@@ -159,7 +164,12 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
         actions.prepare(&r.bindings)?;
     }
     eprintln!("grabbed {}; hold {} to exit", path.display(), escape);
-    let engine = Focused::new(engine, Box::new(window_adapter()));
+    let mut engine = Focused::new(engine, Box::new(window_adapter()));
+    if current.as_ref().is_some_and(|r| r.overlay) {
+        if let Some(handle) = start_overlay() {
+            engine = engine.with_overlay(handle);
+        }
+    }
     forward(&mut grab, &mut out, engine, |stroke, app| {
         println!("{stroke}");
         match watcher.as_mut().and_then(ConfigWatcher::poll) {
@@ -173,12 +183,13 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
                             r.escape.clone(),
                             r.freeze_pointer,
                             r.click_slop_px,
+                            r.overlay,
                         )
                     };
                     if restart(old) != restart(&new) {
                         eprintln!(
-                            "trigger, min_stroke_px, escape, freeze_pointer and click_slop_px \
-                             change only after a restart"
+                            "trigger, min_stroke_px, escape, freeze_pointer, click_slop_px and \
+                             overlay change only after a restart"
                         );
                     }
                 }
@@ -208,6 +219,23 @@ fn run(args: &RunArgs) -> anyhow::Result<()> {
     })?;
     eprintln!("escape chord held, exiting");
     Ok(())
+}
+
+/// The trail overlay's render thread for this session, or `None` without a display server.
+fn start_overlay() -> Option<OverlayHandle> {
+    let style = TrailStyle::default();
+    match overlay_backend(|k| std::env::var_os(k)) {
+        OverlayBackend::Wayland => Some(spawn(move || {
+            WaylandOverlay::new(style).map(|o| Box::new(o) as Box<dyn Overlay>)
+        })),
+        OverlayBackend::X11 => Some(spawn(move || {
+            X11Overlay::new(style).map(|o| Box::new(o) as Box<dyn Overlay>)
+        })),
+        OverlayBackend::None => {
+            eprintln!("overlay disabled: neither WAYLAND_DISPLAY nor DISPLAY is set");
+            None
+        }
+    }
 }
 
 /// The bounded window adapter for `run`, picked from the session environment; backends without an

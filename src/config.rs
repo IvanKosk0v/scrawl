@@ -270,6 +270,10 @@ pub struct Config {
     /// less than `min_stroke_px`).
     #[serde(default = "default_click_slop_px")]
     pub click_slop_px: u32,
+    /// Draw the stroke trail while the trigger is held (default false; X11 and wlr-layer-shell
+    /// compositors).
+    #[serde(default)]
+    pub overlay: bool,
     /// Stroke bindings.
     #[serde(default)]
     pub binding: Vec<Binding>,
@@ -359,6 +363,8 @@ pub struct Resolved {
     pub freeze_pointer: bool,
     /// Click distance in live mode (always the global setting).
     pub click_slop_px: u32,
+    /// Draw the stroke trail (always the global setting).
+    pub overlay: bool,
     /// Every binding that can apply to this device, most specific first, each tagged with its
     /// effective `app`: app-specific ones (device profile, then app profiles, then global), then
     /// the rest (device profile, then global). Use [`Resolved::bindings_for`] to pick by app.
@@ -509,6 +515,7 @@ impl Config {
             feedback: self.feedback,
             freeze_pointer: self.freeze_pointer,
             click_slop_px: self.click_slop_px,
+            overlay: self.overlay,
             bindings,
         }
     }
