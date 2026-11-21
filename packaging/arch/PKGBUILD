@@ -10,7 +10,7 @@ depends=('glibc' 'gcc-libs')
 makedepends=('cargo')
 optdepends=('libnotify: desktop notifications with feedback = "notify"')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('f3d46eb15000b7d8e2f989795c6da78a4c352229ac7aefec7573d3e2646fcb8f')
 
 prepare() {
   cd "$pkgname-$pkgver"

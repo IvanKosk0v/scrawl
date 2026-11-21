@@ -1,9 +1,9 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
 Current milestone: M7 (post-0.1; approved P1). Current task: M7.1 (not started)
-Branch: main (create m7-overlay from main with /next). M6 + M6.6 merged 2026-11-21.
+Branch: m6-arch-checksum (checksum follow-up; merge via /milestone-style confirm), then create m7-overlay from main. v0.1.0 tag + release published 2026-11-21 (c05065a).
 ## Handoff
-Next: user pushes main; then v0.1.0 was NEVER published (only a local tag on a757b92): delete local tag, retag on main HEAD, push it, verify release.yml. Then I fill PKGBUILD sha256sums (updpkgsums, tarball of the tag) in a small follow-up. After that M7.1 (deps smithay-client-toolkit, tiny-skia, x11rb allowed for M7 only).
+Next: user merges m6-arch-checksum into main (or via PR) and pushes; then M7.1 (deps smithay-client-toolkit, tiny-skia, x11rb allowed for M7 only). PKGBUILD sha256sums now real (tag tarball), makepkg against the real URL OK.
 Next: /milestone (merge into main), then M7.1. User: PKGBUILD sha256sums is SKIP and the tarball URL 404s until the repo is public; run updpkgsums then.
 Fragile: real grab/uinput, udev+input group on login, systemd session start stay manual. A hung lookup delays one trigger press by <= 50 ms, then lookups are skipped until it answers; all five desktops verified by user; key-combo action not in the user's hardware list. Reload polled only on strokes. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time. README: .deb install line assumes a GitHub release (exists after M6.4); comparison rows from RESEARCH.md not re-checked. Source video kept outside the repo (~/notes/strokebind-demo.mp4).
 ## Decisions
