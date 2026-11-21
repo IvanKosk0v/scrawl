@@ -62,6 +62,22 @@ fn trail_accumulates_deltas_from_start() {
     assert!(t.points().is_empty());
 }
 
+#[test]
+fn push_point_appends_absolute_and_caps_at_max() {
+    let mut t = Trail::new((10.0, 20.0));
+    t.push_point((300.0, 5.0));
+    t.push_point((300.0, 5.0));
+    assert_eq!(t.points(), &[(10.0, 20.0), (300.0, 5.0)]);
+    for i in 0..MAX_TRAIL_POINTS {
+        t.push_point((i as f32, 0.0));
+    }
+    assert_eq!(t.points().len(), MAX_TRAIL_POINTS);
+    assert_eq!(
+        t.points().last(),
+        Some(&((MAX_TRAIL_POINTS - 1) as f32, 0.0))
+    );
+}
+
 const W: u32 = 64;
 const H: u32 = 64;
 

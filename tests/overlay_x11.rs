@@ -4,7 +4,7 @@
 
 use strokebind::overlay::trail::{Trail, TrailStyle};
 use strokebind::overlay::x11::{
-    input_region, mask_rects, rgb_pixel, trail_bbox, window_attributes, Rect, X11Overlay,
+    input_region, mask_rects, rgb_pixel, track, trail_bbox, window_attributes, Rect, X11Overlay,
     OVERLAY_WM_CLASS,
 };
 use strokebind::overlay::Overlay;
@@ -16,6 +16,34 @@ fn rect(x: i16, y: i16, width: u16, height: u16) -> Rect {
         width,
         height,
     }
+}
+
+#[test]
+fn track_uses_pointer_position_not_deltas() {
+    // Pointer acceleration: raw delta 5 px, but the cursor moved 40 px.
+    let mut t = Trail::new((100.0, 100.0));
+    track(&mut t, 5, 0, Some((140, 100)));
+    track(&mut t, 5, 0, Some((180, 100)));
+    assert_eq!(
+        t.points(),
+        &[(100.0, 100.0), (140.0, 100.0), (180.0, 100.0)]
+    );
+}
+
+#[test]
+fn track_falls_back_to_deltas_without_pointer() {
+    let mut t = Trail::new((100.0, 100.0));
+    track(&mut t, 5, -2, None);
+    assert_eq!(t.points(), &[(100.0, 100.0), (105.0, 98.0)]);
+}
+
+#[test]
+fn track_skips_repeated_pointer_position() {
+    // At a screen edge the cursor stops while deltas keep coming: the trail must not drift.
+    let mut t = Trail::new((1919.0, 500.0));
+    track(&mut t, 30, 0, Some((1919, 500)));
+    track(&mut t, 30, 0, Some((1919, 500)));
+    assert_eq!(t.points(), &[(1919.0, 500.0)]);
 }
 
 #[test]
