@@ -53,6 +53,17 @@ fn changelog_has_dated_0_1_0_section_after_an_empty_unreleased() {
 }
 
 #[test]
+fn changelog_bullets_are_not_fused() {
+    for (n, line) in CHANGELOG.lines().enumerate() {
+        assert!(
+            !line.contains(".- `") && !line.contains(". - `"),
+            "CHANGELOG line {} has two bullets on one line",
+            n + 1
+        );
+    }
+}
+
+#[test]
 fn changelog_has_no_claims_that_later_entries_made_false() {
     assert!(!CHANGELOG.contains("does not track the focused window yet"));
     assert!(!CHANGELOG.contains("slot is still empty"));

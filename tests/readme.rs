@@ -90,23 +90,51 @@ fn every_strokebind_subcommand_and_flag_in_the_readme_exists() {
         String::from_utf8_lossy(&out.stdout).into_owned()
     };
     let top = help(&["--help"]);
-    for line in README.lines().filter(|l| l.contains("`strokebind ")) {
-        for span in line.split('`').skip(1).step_by(2) {
-            let mut words = span
-                .strip_prefix("strokebind ")
-                .into_iter()
-                .flat_map(str::split_whitespace);
-            let Some(sub) = words.next() else { continue };
-            if sub.starts_with('-') {
-                continue;
+
+    // Commands from inline code spans and from ```sh fences (trailing `# comment` stripped).
+    let mut commands: Vec<&str> = Vec::new();
+    let mut in_sh = false;
+    for line in README.lines() {
+        if line.starts_with("```") {
+            in_sh = line.trim() == "```sh";
+            continue;
+        }
+        if in_sh {
+            let cmd = line.split(" #").next().unwrap_or_default().trim();
+            if cmd.starts_with("strokebind ") {
+                commands.push(cmd);
             }
-            assert!(top.contains(sub), "README uses unknown subcommand `{sub}`");
-            let sub_help = help(&[sub, "--help"]);
-            for flag in words.filter(|w| w.starts_with("--")) {
-                assert!(sub_help.contains(flag), "`strokebind {sub}` has no {flag}");
-            }
+        } else {
+            commands.extend(line.split('`').skip(1).step_by(2));
         }
     }
+
+    let mut checked = 0;
+    let mut checked_in_fence = 0;
+    for cmd in commands {
+        let mut words = cmd
+            .strip_prefix("strokebind ")
+            .into_iter()
+            .flat_map(str::split_whitespace);
+        let Some(sub) = words.next() else { continue };
+        if sub.starts_with('-') {
+            continue;
+        }
+        assert!(top.contains(sub), "README uses unknown subcommand `{sub}`");
+        let sub_help = help(&[sub, "--help"]);
+        for flag in words.filter(|w| w.starts_with("--")) {
+            assert!(sub_help.contains(flag), "`strokebind {sub}` has no {flag}");
+        }
+        checked += 1;
+        if README.contains(&format!("\n{cmd}")) {
+            checked_in_fence += 1;
+        }
+    }
+    assert!(checked >= 4, "only {checked} README commands were checked");
+    assert!(
+        checked_in_fence >= 4,
+        "the Quick start fence was not scanned ({checked_in_fence} commands)"
+    );
 }
 
 #[test]
