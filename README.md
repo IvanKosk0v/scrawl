@@ -4,6 +4,7 @@ Mouse-stroke gestures for **any** Linux Wayland compositor (and X11). Hold a mou
 strokebind runs the action you bound to it: a key combo or a command. Plain clicks, including right-click menus, keep working.
 
 <!-- demo-gif -->
+![strokebind demo: back/forward and tab strokes in a browser, a right-click menu still working, then the escape chord](docs/demo.gif)
 
 - **Every compositor, and X11.** It reads the mouse through evdev and re-emits it through uinput, so it needs no compositor API.
 - **Clicks still work.** A press that does not turn into a stroke is replayed as an ordinary click. Use a side or middle button as the trigger if you prefer.
