@@ -1,0 +1,160 @@
+//! M7.1: overlay backend picker and the shared tiny-skia trail renderer.
+
+use std::ffi::OsString;
+
+use proptest::prelude::*;
+use strokebind::overlay::trail::{render, Trail, TrailStyle};
+use strokebind::overlay::{overlay_backend, OverlayBackend};
+
+/// A fake environment holding exactly `vars`.
+fn env(vars: &'static [(&'static str, &'static str)]) -> impl Fn(&str) -> Option<OsString> {
+    move |k| {
+        vars.iter()
+            .find(|(n, _)| *n == k)
+            .map(|(_, v)| OsString::from(v))
+    }
+}
+
+#[test]
+fn backend_nothing_set_is_none() {
+    assert_eq!(overlay_backend(env(&[])), OverlayBackend::None);
+}
+
+#[test]
+fn backend_display_only_is_x11() {
+    assert_eq!(
+        overlay_backend(env(&[("DISPLAY", ":0")])),
+        OverlayBackend::X11
+    );
+}
+
+#[test]
+fn backend_wayland_only_is_wayland() {
+    assert_eq!(
+        overlay_backend(env(&[("WAYLAND_DISPLAY", "wayland-0")])),
+        OverlayBackend::Wayland
+    );
+}
+
+#[test]
+fn backend_xwayland_both_set_is_wayland() {
+    assert_eq!(
+        overlay_backend(env(&[("DISPLAY", ":0"), ("WAYLAND_DISPLAY", "wayland-0")])),
+        OverlayBackend::Wayland
+    );
+}
+
+#[test]
+fn backend_empty_wayland_display_falls_back_to_x11() {
+    assert_eq!(
+        overlay_backend(env(&[("WAYLAND_DISPLAY", ""), ("DISPLAY", ":0")])),
+        OverlayBackend::X11
+    );
+}
+
+#[test]
+fn trail_accumulates_deltas_from_start() {
+    let mut t = Trail::new((10.0, 20.0));
+    t.push_delta(5, 0);
+    t.push_delta(0, -3);
+    assert_eq!(t.points(), &[(10.0, 20.0), (15.0, 20.0), (15.0, 17.0)]);
+    t.clear();
+    assert!(t.points().is_empty());
+}
+
+const W: u32 = 64;
+const H: u32 = 64;
+
+fn buffer() -> Vec<u8> {
+    vec![0; (W * H * 4) as usize]
+}
+
+/// Premultiplied RGBA of pixel (x, y).
+fn px(buf: &[u8], x: u32, y: u32) -> [u8; 4] {
+    let i = ((y * W + x) * 4) as usize;
+    [buf[i], buf[i + 1], buf[i + 2], buf[i + 3]]
+}
+
+fn style() -> TrailStyle {
+    TrailStyle {
+        width_px: 4.0,
+        rgba: [255, 0, 0, 255],
+    }
+}
+
+fn trail(points: &[(i32, i32)]) -> Trail {
+    let (first, rest) = points
+        .split_first()
+        .map_or(((0, 0), &[][..]), |(f, r)| (*f, r));
+    let mut t = Trail::new((first.0 as f32, first.1 as f32));
+    let mut prev = first;
+    for &p in rest {
+        t.push_delta(p.0 - prev.0, p.1 - prev.1);
+        prev = p;
+    }
+    t
+}
+
+#[test]
+fn horizontal_trail_paints_line_pixels_only() {
+    let mut buf = buffer();
+    render(&trail(&[(8, 32), (56, 32)]), &style(), &mut buf, W, H).unwrap();
+    assert_eq!(px(&buf, 32, 32), [255, 0, 0, 255]);
+    assert_eq!(px(&buf, 32, 5), [0, 0, 0, 0]);
+    assert_eq!(px(&buf, 60, 60), [0, 0, 0, 0]);
+}
+
+#[test]
+fn l_shaped_trail_covers_both_legs() {
+    let mut buf = buffer();
+    render(
+        &trail(&[(10, 10), (10, 50), (50, 50)]),
+        &style(),
+        &mut buf,
+        W,
+        H,
+    )
+    .unwrap();
+    assert_eq!(px(&buf, 10, 30)[3], 255);
+    assert_eq!(px(&buf, 30, 50)[3], 255);
+    assert_eq!(px(&buf, 40, 20), [0, 0, 0, 0]);
+}
+
+#[test]
+fn empty_and_single_point_trails_leave_buffer_transparent() {
+    for t in [Trail::new((32.0, 32.0)), {
+        let mut t = Trail::new((32.0, 32.0));
+        t.clear();
+        t
+    }] {
+        let mut buf = vec![7; (W * H * 4) as usize];
+        render(&t, &style(), &mut buf, W, H).unwrap();
+        assert!(buf.iter().all(|&b| b == 0));
+    }
+}
+
+#[test]
+fn rerender_clears_previous_frame() {
+    let mut buf = buffer();
+    render(&trail(&[(8, 10), (56, 10)]), &style(), &mut buf, W, H).unwrap();
+    render(&trail(&[(8, 50), (56, 50)]), &style(), &mut buf, W, H).unwrap();
+    assert_eq!(px(&buf, 32, 10), [0, 0, 0, 0]);
+    assert_eq!(px(&buf, 32, 50)[3], 255);
+}
+
+#[test]
+fn wrong_buffer_size_is_an_error() {
+    let mut buf = vec![0; 10];
+    assert!(render(&trail(&[(0, 0), (5, 5)]), &style(), &mut buf, W, H).is_err());
+    let mut empty = Vec::new();
+    assert!(render(&trail(&[(0, 0), (5, 5)]), &style(), &mut empty, 0, 0).is_err());
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(256))]
+    #[test]
+    fn render_never_panics(points in prop::collection::vec((-100_000i32..100_000, -100_000i32..100_000), 0..40)) {
+        let mut buf = buffer();
+        let _ = render(&trail(&points), &style(), &mut buf, W, H);
+    }
+}

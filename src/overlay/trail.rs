@@ -1,0 +1,103 @@
+//! The stroke trail and its tiny-skia renderer (pure: draws into a caller-owned buffer).
+
+use tiny_skia::{Color, LineCap, LineJoin, Paint, PathBuilder, PixmapMut, Stroke, Transform};
+
+use crate::error::Error;
+
+/// Points of the stroke being drawn, in surface pixels.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Trail {
+    points: Vec<(f32, f32)>,
+}
+
+impl Trail {
+    /// A trail holding only its start point.
+    pub fn new(start: (f32, f32)) -> Self {
+        Self {
+            points: vec![start],
+        }
+    }
+
+    /// Appends the point `(dx, dy)` away from the last one (a relative mouse motion). An empty
+    /// trail starts at the origin.
+    pub fn push_delta(&mut self, dx: i32, dy: i32) {
+        let (x, y) = self.points.last().copied().unwrap_or((0.0, 0.0));
+        self.points.push((x + dx as f32, y + dy as f32));
+    }
+
+    /// Removes every point.
+    pub fn clear(&mut self) {
+        self.points.clear();
+    }
+
+    /// The points, oldest first.
+    pub fn points(&self) -> &[(f32, f32)] {
+        &self.points
+    }
+}
+
+/// How the trail is drawn.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct TrailStyle {
+    /// Line width in pixels.
+    pub width_px: f32,
+    /// Straight (not premultiplied) RGBA color.
+    pub rgba: [u8; 4],
+}
+
+impl Default for TrailStyle {
+    fn default() -> Self {
+        Self {
+            width_px: 4.0,
+            rgba: [0x33, 0x99, 0xff, 0xdd],
+        }
+    }
+}
+
+/// Clears `buf` (premultiplied RGBA, `width * height * 4` bytes, row-major) to transparent and
+/// draws `trail` as an anti-aliased polyline with round caps and joins. Fewer than two points
+/// draw nothing.
+pub fn render(
+    trail: &Trail,
+    style: &TrailStyle,
+    buf: &mut [u8],
+    width: u32,
+    height: u32,
+) -> Result<(), Error> {
+    let len = buf.len();
+    let mut pixmap = PixmapMut::from_bytes(buf, width, height).ok_or_else(|| {
+        Error::Overlay(format!(
+            "pixel buffer of {len} bytes does not fit {width}x{height} RGBA"
+        ))
+    })?;
+    pixmap.fill(Color::TRANSPARENT);
+
+    let Some(((x0, y0), rest)) = trail.points().split_first() else {
+        return Ok(());
+    };
+    if rest.is_empty() {
+        return Ok(());
+    }
+    let mut pb = PathBuilder::new();
+    pb.move_to(*x0, *y0);
+    for &(x, y) in rest {
+        pb.line_to(x, y);
+    }
+    // A path of identical points has no bounds; nothing to draw.
+    let Some(path) = pb.finish() else {
+        return Ok(());
+    };
+
+    let [r, g, b, a] = style.rgba;
+    let mut paint = Paint::default();
+    paint.set_color_rgba8(r, g, b, a);
+    paint.anti_alias = true;
+    let stroke = Stroke {
+        width: style.width_px,
+        line_cap: LineCap::Round,
+        line_join: LineJoin::Round,
+        ..Stroke::default()
+    };
+    pixmap.stroke_path(&path, &paint, &stroke, Transform::identity(), None);
+    Ok(())
+}

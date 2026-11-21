@@ -70,6 +70,9 @@ pub enum Error {
         /// What is wrong.
         message: String,
     },
+    /// The stroke trail overlay could not draw (e.g. a pixel buffer of the wrong size).
+    #[error("overlay: {0}")]
+    Overlay(String),
 }
 
 fn format_config(line: Option<usize>, message: &str) -> String {

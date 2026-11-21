@@ -55,7 +55,7 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 - [x] M6.6 Arch PKGBUILD in the repo (AUR registration blocked; branch `m6-arch-pkgbuild`, approved P10): `packaging/arch/PKGBUILD` (source = GitHub tag tarball, `sha256sums` filled at release), README Install line for Arch/Artix, `[Unreleased]` CHANGELOG line. Acceptance: tests in `tests/packaging.rs` (pkgver == Cargo version, every installed file exists, no sudo); `makepkg` builds and the packaged binary prints `--version`.
 
 ## M7 Stroke trail overlay (post-0.1; approved P1)
-- [ ] M7.1 `Overlay` trait + shared tiny-skia trail renderer; backend picked from WAYLAND_DISPLAY/DISPLAY. Acceptance: renderer tests on a pixel buffer, backend-selection tests incl. both WAYLAND_DISPLAY and DISPLAY set (XWayland) => Wayland backend.
+- [x] M7.1 `Overlay` trait + shared tiny-skia trail renderer; backend picked from WAYLAND_DISPLAY/DISPLAY. Acceptance: renderer tests on a pixel buffer, backend-selection tests incl. both WAYLAND_DISPLAY and DISPLAY set (XWayland) => Wayland backend.
 - [ ] M7.2 X11 backend: transparent click-through override-redirect window (x11rb shape+xfixes), cursor start from QueryPointer; Shape-masked trail without a compositor. Acceptance: tests of geometry/input-region logic; manual check on bspwm.
 - [ ] M7.3 Wayland backend: wlr-layer-shell (smithay-client-toolkit); trail starts at screen center where no cursor position is available. Acceptance: tests of non-protocol logic; manual check on Sway/Hyprland/KDE; GNOME documented as notify-only (M4.5).
 - [ ] M7.4 Render thread fed by the event loop, never blocking input forwarding. Acceptance: fake-overlay test proving the loop does not block.
