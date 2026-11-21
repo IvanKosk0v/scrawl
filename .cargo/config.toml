@@ -1,0 +1,4 @@
+# Keep Cargo.lock buildable on the MSRV (`rust-version` in Cargo.toml): `cargo update` picks the
+# newest versions that support it. Read by Cargo 1.84 and later.
+[resolver]
+incompatible-rust-versions = "fallback"
