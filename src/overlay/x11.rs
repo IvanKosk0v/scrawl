@@ -310,6 +310,11 @@ impl X11Overlay {
         self.conn.flush().map_err(x11_err)
     }
 
+    /// True after `begin` (motions follow the real cursor), false after `begin_at`.
+    pub fn follows_pointer(&self) -> bool {
+        self.follow_pointer
+    }
+
     /// The overlay's X11 window id.
     pub fn window(&self) -> Window {
         self.window

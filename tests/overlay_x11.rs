@@ -221,3 +221,14 @@ fn x11_overlay_window_is_tagged_for_compositor_rules() {
     let types: Vec<u32> = ty.value32().unwrap().collect();
     assert_eq!(types, vec![atom(b"_NET_WM_WINDOW_TYPE_DND")]);
 }
+
+#[test]
+#[ignore = "needs an X11 display"]
+fn x11_overlay_begin_follows_pointer_begin_at_does_not() {
+    let mut o = X11Overlay::new(TrailStyle::default()).unwrap();
+    o.begin().unwrap();
+    assert!(o.follows_pointer());
+    o.begin_at((10.0, 10.0)).unwrap();
+    assert!(!o.follows_pointer());
+    o.end().unwrap();
+}
