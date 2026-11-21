@@ -253,3 +253,19 @@ fn readme_documents_the_arch_install() {
     let readme = include_str!("../README.md");
     assert!(readme.contains("cd packaging/arch && makepkg -si"));
 }
+
+#[test]
+fn pkgbuild_checksum_is_a_real_sha256() {
+    let sums = PKGBUILD
+        .lines()
+        .find(|l| l.starts_with("sha256sums="))
+        .expect("sha256sums=");
+    let sum = sums
+        .trim_start_matches("sha256sums=(")
+        .trim_end_matches(')')
+        .trim_matches('\'');
+    assert!(
+        sum.len() == 64 && sum.chars().all(|c| c.is_ascii_hexdigit()),
+        "sha256sums must be the tag tarball's checksum, not {sum}"
+    );
+}
