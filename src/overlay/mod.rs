@@ -9,6 +9,7 @@ use crate::backend::{display_server, DisplayServer};
 use crate::error::Error;
 
 pub mod trail;
+pub mod wayland;
 pub mod x11;
 
 /// A surface that shows the trail of the stroke being drawn.

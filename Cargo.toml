@@ -22,6 +22,7 @@ notify = "8"
 x11rb = { version = "0.13", features = ["shape", "xfixes"] }
 serde_json = "1"
 tiny-skia = { version = "0.12", default-features = false, features = ["std", "simd"] }
+smithay-client-toolkit = { version = "0.20", default-features = false }
 
 [lints.rust]
 unsafe_code = "deny"      # only src/sys/ may `#![allow(unsafe_code)]`, each use documented
