@@ -3,7 +3,7 @@
 use std::ffi::OsString;
 
 use proptest::prelude::*;
-use strokebind::overlay::trail::{render, Trail, TrailStyle};
+use strokebind::overlay::trail::{render, Trail, TrailStyle, MAX_TRAIL_POINTS};
 use strokebind::overlay::{overlay_backend, OverlayBackend};
 
 /// A fake environment holding exactly `vars`.
@@ -208,4 +208,22 @@ fn scale_two_draws_at_doubled_position_and_twice_as_thick() {
     let mut lo = buffer();
     render(&trail(&[(8, 32), (56, 32)]), &style(), &mut lo, W, H).unwrap();
     assert_eq!(px(&lo, 32, 35)[3], 0);
+}
+
+// Review fix: a trigger held for a long time must not make every frame slower forever.
+
+#[test]
+fn trail_keeps_only_the_newest_points() {
+    let mut t = Trail::new((0.0, 0.0));
+    for _ in 0..MAX_TRAIL_POINTS * 3 {
+        t.push_delta(1, 0);
+    }
+    assert_eq!(t.points().len(), MAX_TRAIL_POINTS);
+    let n = (MAX_TRAIL_POINTS * 3) as f32;
+    assert_eq!(t.points().last(), Some(&(n, 0.0)), "newest point kept");
+    assert_eq!(
+        t.points().first(),
+        Some(&(n - (MAX_TRAIL_POINTS - 1) as f32, 0.0)),
+        "oldest points dropped"
+    );
 }

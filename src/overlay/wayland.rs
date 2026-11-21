@@ -10,6 +10,7 @@
 
 use smithay_client_toolkit::compositor::{CompositorHandler, CompositorState, Region};
 use smithay_client_toolkit::output::{OutputHandler, OutputState};
+use smithay_client_toolkit::reexports::client::backend::WaylandError;
 use smithay_client_toolkit::reexports::client::globals::registry_queue_init;
 use smithay_client_toolkit::reexports::client::protocol::{wl_output, wl_shm, wl_surface};
 use smithay_client_toolkit::reexports::client::{Connection, EventQueue, Proxy, QueueHandle};
@@ -93,6 +94,15 @@ pub fn buffer_size(logical: (u32, u32), scale: i32) -> Option<(u32, u32)> {
 /// was unplugged) cannot be drawn on.
 pub fn recreate_surface(outputs: usize, closed: bool) -> bool {
     closed || outputs > 1
+}
+
+/// The outcome of flushing requests on the non-blocking socket: "would block" (the compositor is
+/// slow to read) is not an error, the rest is sent with the next flush; anything else is.
+pub fn flush_result(r: Result<(), WaylandError>) -> Result<(), Error> {
+    match r {
+        Err(WaylandError::Io(e)) if e.kind() == std::io::ErrorKind::WouldBlock => Ok(()),
+        other => other.map_err(wl_err),
+    }
 }
 
 /// The error for compositors without wlr-layer-shell.
@@ -256,7 +266,7 @@ impl WaylandOverlay {
 
     /// Sends queued requests and handles whatever events already arrived, without blocking.
     fn pump(&mut self) -> Result<(), Error> {
-        self.queue.flush().map_err(wl_err)?;
+        flush_result(self.queue.flush())?;
         if let Some(guard) = self.conn.prepare_read() {
             // Non-blocking socket: "would block" just means nothing arrived yet.
             let _ = guard.read();

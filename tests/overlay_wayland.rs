@@ -5,10 +5,19 @@
 use smithay_client_toolkit::shell::wlr_layer::{Anchor, KeyboardInteractivity, Layer};
 use strokebind::overlay::trail::TrailStyle;
 use strokebind::overlay::wayland::{
-    buffer_size, center, input_region_rects, layer_settings, no_layer_shell_error,
+    buffer_size, center, flush_result, input_region_rects, layer_settings, no_layer_shell_error,
     recreate_surface, rgba_to_argb8888, WaylandOverlay, LAYER_NAMESPACE,
 };
 use strokebind::overlay::Overlay;
+
+#[test]
+fn flush_that_would_block_is_retried_later_not_fatal() {
+    use smithay_client_toolkit::reexports::client::backend::WaylandError;
+    use std::io::{Error as IoError, ErrorKind};
+    assert!(flush_result(Ok(())).is_ok());
+    assert!(flush_result(Err(WaylandError::Io(IoError::from(ErrorKind::WouldBlock)))).is_ok());
+    assert!(flush_result(Err(WaylandError::Io(IoError::from(ErrorKind::BrokenPipe)))).is_err());
+}
 
 #[test]
 fn buffer_size_multiplies_the_logical_size_by_the_scale() {

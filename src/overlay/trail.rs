@@ -4,6 +4,10 @@ use tiny_skia::{Color, LineCap, LineJoin, Paint, PathBuilder, PixmapMut, Stroke,
 
 use crate::error::Error;
 
+/// Most points a [`Trail`] keeps; older ones are dropped so each frame's cost stays bounded
+/// while the trigger is held for a long time.
+pub const MAX_TRAIL_POINTS: usize = 2000;
+
 /// Points of the stroke being drawn, in surface pixels.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Trail {
@@ -19,9 +23,12 @@ impl Trail {
     }
 
     /// Appends the point `(dx, dy)` away from the last one (a relative mouse motion). An empty
-    /// trail starts at the origin.
+    /// trail starts at the origin. Beyond [`MAX_TRAIL_POINTS`] the oldest point is dropped.
     pub fn push_delta(&mut self, dx: i32, dy: i32) {
         let (x, y) = self.points.last().copied().unwrap_or((0.0, 0.0));
+        if self.points.len() >= MAX_TRAIL_POINTS {
+            self.points.remove(0);
+        }
         self.points.push((x + dx as f32, y + dy as f32));
     }
 
