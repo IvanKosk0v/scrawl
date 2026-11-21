@@ -52,6 +52,7 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 - [x] M6.3 README: pitch, 20s demo GIF, install, config example, support matrix, comparison table (docs/RESEARCH.md), FAQ. Acceptance: every claim maps to a tested feature; user approves the final text.
 - [x] M6.4 Release hygiene: CHANGELOG 0.1.0 section, tag v0.1.0, verify LICENSE headers, SECURITY contact works. Acceptance: `cargo package --list` shows license files; CI green on the tag.
 - [x] M6.5 Launch checklist: Show HN, r/linux, r/unixporn, r/rust, compositor subreddits, AUR package. Acceptance: a checklist file with final post texts, ready for the user to submit.
+- [x] M6.6 Arch PKGBUILD in the repo (AUR registration blocked; branch `m6-arch-pkgbuild`, approved P10): `packaging/arch/PKGBUILD` (source = GitHub tag tarball, `sha256sums` filled at release), README Install line for Arch/Artix, `[Unreleased]` CHANGELOG line. Acceptance: tests in `tests/packaging.rs` (pkgver == Cargo version, every installed file exists, no sudo); `makepkg` builds and the packaged binary prints `--version`.
 
 ## M7 Stroke trail overlay (post-0.1; approved P1)
 - [ ] M7.1 `Overlay` trait + shared tiny-skia trail renderer; backend picked from WAYLAND_DISPLAY/DISPLAY. Acceptance: renderer tests on a pixel buffer, backend-selection tests incl. both WAYLAND_DISPLAY and DISPLAY set (XWayland) => Wayland backend.

@@ -19,6 +19,12 @@ Debian/Ubuntu: download the `.deb` from the GitHub release and install it (the p
 sudo apt install ./strokebind_*.deb
 ```
 
+Arch/Artix: build the package from the tag tarball (needs `cargo`; installs the udev rule and the user unit):
+
+```sh
+cd packaging/arch && makepkg -si
+```
+
 From source (Rust, see `rust-version` in `Cargo.toml`): a per-user install that never uses root and prints the one
 root step (the udev rule) for you to run:
 

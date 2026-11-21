@@ -173,3 +173,83 @@ fn ci_package_job_checks_deb_install_script_unit_and_rule_on_every_push() {
         "package job must run on every push/PR"
     );
 }
+
+// ---- M6.6: Arch PKGBUILD shipped in the repo ----
+
+const PKGBUILD: &str = include_str!("../packaging/arch/PKGBUILD");
+
+fn pkgbuild_var(name: &str) -> &'static str {
+    PKGBUILD
+        .lines()
+        .find_map(|l| l.strip_prefix(&format!("{name}=")))
+        .map(|v| v.trim_matches(|c| c == '\'' || c == '"'))
+        .unwrap_or_else(|| panic!("PKGBUILD has no {name}="))
+}
+
+#[test]
+fn pkgbuild_version_matches_cargo_and_fetches_the_tag() {
+    let manifest = include_str!("../Cargo.toml");
+    let cargo_version = manifest
+        .lines()
+        .find_map(|l| l.strip_prefix("version = "))
+        .expect("Cargo.toml version")
+        .trim_matches('"');
+    assert_eq!(pkgbuild_var("pkgver"), cargo_version);
+    assert_eq!(pkgbuild_var("pkgname"), "strokebind");
+    let source = PKGBUILD
+        .lines()
+        .find(|l| l.starts_with("source="))
+        .expect("source=");
+    assert!(
+        source.contains("/archive/refs/tags/v$pkgver.tar.gz"),
+        "{source}"
+    );
+}
+
+#[test]
+fn pkgbuild_installs_files_that_exist_into_the_right_places() {
+    let installs: Vec<Vec<&str>> = PKGBUILD
+        .lines()
+        .filter(|l| l.trim_start().starts_with("install -Dm"))
+        .map(|l| l.split_whitespace().collect())
+        .collect();
+    assert!(
+        installs.len() >= 6,
+        "expected 6 install lines, got {}",
+        installs.len()
+    );
+    for words in &installs {
+        let src = words[2];
+        if src != "target/release/strokebind" {
+            assert!(root().join(src).exists(), "{src} does not exist");
+        }
+    }
+    for dest in [
+        "usr/bin/strokebind",
+        "usr/lib/udev/rules.d/70-strokebind.rules",
+        "usr/lib/systemd/user/strokebind.service",
+        "usr/share/doc/strokebind/config.example.toml",
+        "usr/share/licenses/$pkgname/LICENSE-MIT",
+        "usr/share/licenses/$pkgname/LICENSE-APACHE",
+    ] {
+        assert!(PKGBUILD.contains(dest), "PKGBUILD does not install {dest}");
+    }
+    // The unit shipped to /usr/lib is the deb one (absolute /usr/bin path).
+    assert!(PKGBUILD.contains("packaging/strokebind-deb.service"));
+}
+
+#[test]
+fn pkgbuild_never_asks_for_root_and_builds_locked() {
+    assert!(!PKGBUILD.contains("sudo"));
+    assert!(PKGBUILD.contains("cargo fetch --locked"));
+    assert!(PKGBUILD.contains("cargo build --release --frozen"));
+    assert!(
+        pkgbuild_var("license").contains("MIT") && pkgbuild_var("license").contains("Apache-2.0")
+    );
+}
+
+#[test]
+fn readme_documents_the_arch_install() {
+    let readme = include_str!("../README.md");
+    assert!(readme.contains("cd packaging/arch && makepkg -si"));
+}

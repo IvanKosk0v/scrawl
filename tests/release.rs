@@ -26,15 +26,26 @@ fn manifest_points_at_the_repository() {
 }
 
 #[test]
-fn changelog_has_dated_0_1_0_section_after_an_empty_unreleased() {
+fn changelog_has_dated_0_1_0_section_below_unreleased() {
     let unreleased = CHANGELOG
         .find("## [Unreleased]")
         .expect("Unreleased heading");
     let release = CHANGELOG.find("## [0.1.0] - ").expect("0.1.0 heading");
     assert!(unreleased < release, "Unreleased must come first");
 
-    let between = CHANGELOG[unreleased + "## [Unreleased]".len()..release].trim();
-    assert!(between.is_empty(), "Unreleased must be empty: {between}");
+    // Unreleased was empty when v0.1.0 was tagged; later changes are logged there, so a change must
+    // not be listed under both headings.
+    let unreleased_text = &CHANGELOG[unreleased + "## [Unreleased]".len()..release];
+    let released_text = CHANGELOG[release..]
+        .split("\n## [")
+        .next()
+        .unwrap_or_default();
+    for bullet in unreleased_text.lines().filter(|l| l.starts_with("- ")) {
+        assert!(
+            !released_text.lines().any(|l| l == bullet),
+            "listed under both Unreleased and 0.1.0: {bullet}"
+        );
+    }
 
     let heading = CHANGELOG[release..].lines().next().unwrap_or_default();
     let date = heading.trim_start_matches("## [0.1.0] - ");

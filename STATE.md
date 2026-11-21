@@ -1,12 +1,12 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
-Current milestone: M7 (post-0.1; approved P1)
-Current task: M7.1 (not started)
-Branch: main (create m7-overlay from main with /next)
+Current milestone: M6 (reopened for M6.6, approved P10); M7 follows
+Current task: M6.6 done; next is /milestone (merge m6-arch-pkgbuild), then M7.1
+Branch: m6-arch-pkgbuild (created from main)
 Last session: M6 closed and merged into main (2026-11-21); v0.1.0 tagged and released
 ## Handoff
-Done: M6 complete (packaging, README + demo GIF, v0.1.0 release, CI green on tag). Launch posts live outside the repo (~/notes/strokebind-launch.md).
-Next: /next starts M7.1 (Overlay trait + tiny-skia renderer; deps smithay-client-toolkit, tiny-skia, x11rb allowed for M7 only). User: push main, post launch texts when ready, build PKGBUILD in a clean chroot first.
+Done: M6.6 packaging/arch/PKGBUILD + README Arch line + CHANGELOG + 4 tests in packaging.rs; makepkg built it locally (binary --version OK). release.rs emptiness check replaced by no-duplicate-bullet check (user approved).
+Next: /milestone (merge into main), then M7.1. User: PKGBUILD sha256sums is SKIP and the tarball URL 404s until the repo is public; run updpkgsums then.
 Fragile: real grab/uinput, udev+input group on login, systemd session start stay manual. A hung lookup delays one trigger press by <= 50 ms, then lookups are skipped until it answers; all five desktops verified by user; key-combo action not in the user's hardware list. Reload polled only on strokes. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time. README: .deb install line assumes a GitHub release (exists after M6.4); comparison rows from RESEARCH.md not re-checked. Source video kept outside the repo (~/notes/strokebind-demo.mp4).
 ## Decisions
 - Base: Rust; deps limited to docs/ARCHITECTURE.md allowed list; evdev grab + uinput forwarding so it works on every compositor; Dual license MIT OR Apache-2.0; MSRV 1.85.1: lowest passing version found by `cargo msrv find --min 1.70` (bisect; older toolchains fail on a dependency needing edition 2024).
@@ -35,6 +35,7 @@ Fragile: real grab/uinput, udev+input group on login, systemd session start stay
 - M5.7: app id = focused node's `app_id`, else XWayland `window_properties.class`; focused non-window node (empty workspace) = None. Socket read/write timeout 40 ms each, reply capped 16 MiB, new connection per lookup.
 - M5.8: app id = `class` of `j/activewindow` (`{}`/`Invalid`/blank = None); socket `$XDG_RUNTIME_DIR/hypr/<sig>/.socket.sock` if it exists, else `/tmp/hypr/<sig>/.socket.sock`; no signature = GlobalOnly.
 - Manual verification (user, 2026-11-18): X11 adapter checked on bspwm. list-devices, record, run (pointer, clicks, right-click menu, strokes, notifications, timeout) on KDE Plasma Wayland behaved exactly as on X11 + bspwm. Sway verified by user (2026-11-19): record, run, key-combo + run actions, per-app profiles, core features all OK. Use for M5.9/M6.0/M6.3 README matrix; Hyprland verified by user on a real machine (2026-11-19): per-app profiles, freeze_pointer, core features OK. GNOME verified by user (2026-11-19), all works.
+- M6.6: release.rs `..._below_unreleased` checks order, date, non-empty 0.1.0 and no bullet in both Unreleased and 0.1.0 (user approved swap for the old "Unreleased empty" check). approved P10: M6.6 Arch PKGBUILD in-repo (packaging/arch/PKGBUILD, README line, tests in packaging.rs), branch m6-arch-pkgbuild off main, before M7.1; draft built OK locally 2026-11-21; tarball URL 404s while repo is private; no new deps.
 - M6.5 (user chose): launch posts stay out of the repo (docs/LAUNCH.md and tests/launch.rs removed in the same commit; in history of 65fb7d5 only). Source of truth: ~/notes/strokebind-launch.md.
 - M6.4: no per-file license headers (MIT/Apache do not require them; LICENSE-MIT + LICENSE-APACHE + `license` field + README section checked by test). CI runs only on push to main and on PRs, so milestone branches get CI via a draft PR. Release date in CHANGELOG = 2026-11-21, adjust if tagged later.
 - Stroke grammar: U,D,L,R,UL,UR,DL,DR joined by `-` (`L-U` = left then up). Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.

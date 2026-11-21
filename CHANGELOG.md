@@ -3,6 +3,7 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+- Arch/Artix package: `packaging/arch/PKGBUILD` (`cd packaging/arch && makepkg -si`) builds strokebind from the release tag and installs the binary, udev rule, user unit, example config and licenses.
 
 ## [0.1.0] - 2026-11-21
 - README rewritten for launch: pitch, install, quick start, config examples (checked by tests), comparison table, FAQ and a demo GIF (`docs/demo.gif`).
