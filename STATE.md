@@ -1,12 +1,12 @@
 # STATE (keep under 40 lines; Claude updates, user may read)
 
-Current milestone: M6
-Current task: M6 complete; next is /milestone (verify M6, merge)
-Branch: m6-packaging
-Last session: M6.0 done, all five desktops verified by user (2026-11-19)
+Current milestone: M7 (post-0.1; approved P1)
+Current task: M7.1 (not started)
+Branch: main (create m7-overlay from main with /next)
+Last session: M6 closed and merged into main (2026-11-21); v0.1.0 tagged and released
 ## Handoff
-Done: M6.5 launch checklist + final post texts (Show HN, r/linux, r/unixporn, r/rust, 4 compositor subs, AUR PKGBUILD draft, unbuilt) kept OUTSIDE the repo: ~/notes/strokebind-launch.md.
-Next: /milestone for M6 (user marks draft PR ready and merges after confirming). Before posting: do the Before-posting boxes in the notes file; build the PKGBUILD in a clean chroot first.
+Done: M6 complete (packaging, README + demo GIF, v0.1.0 release, CI green on tag). Launch posts live outside the repo (~/notes/strokebind-launch.md).
+Next: /next starts M7.1 (Overlay trait + tiny-skia renderer; deps smithay-client-toolkit, tiny-skia, x11rb allowed for M7 only). User: push main, post launch texts when ready, build PKGBUILD in a clean chroot first.
 Fragile: real grab/uinput, udev+input group on login, systemd session start stay manual. A hung lookup delays one trigger press by <= 50 ms, then lookups are skipped until it answers; all five desktops verified by user; key-combo action not in the user's hardware list. Reload polled only on strokes. Compensating release after SYN_DROPPED arrives on next device event. Deferred LOWs: grab before virtual mouse creation; button held at grab time. README: .deb install line assumes a GitHub release (exists after M6.4); comparison rows from RESEARCH.md not re-checked. Source video kept outside the repo (~/notes/strokebind-demo.mp4).
 ## Decisions
 - Base: Rust; deps limited to docs/ARCHITECTURE.md allowed list; evdev grab + uinput forwarding so it works on every compositor; Dual license MIT OR Apache-2.0; MSRV 1.85.1: lowest passing version found by `cargo msrv find --min 1.70` (bisect; older toolchains fail on a dependency needing edition 2024).
@@ -37,6 +37,5 @@ Fragile: real grab/uinput, udev+input group on login, systemd session start stay
 - Manual verification (user, 2026-11-18): X11 adapter checked on bspwm. list-devices, record, run (pointer, clicks, right-click menu, strokes, notifications, timeout) on KDE Plasma Wayland behaved exactly as on X11 + bspwm. Sway verified by user (2026-11-19): record, run, key-combo + run actions, per-app profiles, core features all OK. Use for M5.9/M6.0/M6.3 README matrix; Hyprland verified by user on a real machine (2026-11-19): per-app profiles, freeze_pointer, core features OK. GNOME verified by user (2026-11-19), all works.
 - M6.5 (user chose): launch posts stay out of the repo (docs/LAUNCH.md and tests/launch.rs removed in the same commit; in history of 65fb7d5 only). Source of truth: ~/notes/strokebind-launch.md.
 - M6.4: no per-file license headers (MIT/Apache do not require them; LICENSE-MIT + LICENSE-APACHE + `license` field + README section checked by test). CI runs only on push to main and on PRs, so milestone branches get CI via a draft PR. Release date in CHANGELOG = 2026-11-21, adjust if tagged later.
-- M6.3: README sections Install/Quick start/Configuration/Support matrix/Comparison/FAQ/Failsafes; tests/readme.rs checks sections, toml blocks via check-config, subcommands+flags. GIF slot `<!-- demo-gif -->`; box ticks only after user GIF + text approval.
 - Stroke grammar: U,D,L,R,UL,UR,DL,DR joined by `-` (`L-U` = left then up). Config: `trigger` required, `min_stroke_px` defaults to 40, errors carry 1-based line.
 ## Proposals (numbered; awaiting user `/approve P<n>` or `/reject P<n>`)
