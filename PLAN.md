@@ -1,7 +1,7 @@
 # PLAN (rigid). Changes only via `/approve P<n>`.
 
 Legend: [ ] todo, [x] done. Every task ends with `./scripts/check.sh` OK and follows CLAUDE.md "Definition of done".
-Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-actions, m5-adapters, m6-launch, m7-overlay.
+Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-actions, m5-adapters, m6-launch, m7-overlay, m8-msrv.
 
 ## M0 Foundation
 - [x] M0.1 Crate layout: `src/{main,lib,error,config}.rs`, `src/recognizer/`, `src/device/`, `src/sys/`. Acceptance: builds, check.sh OK.
@@ -60,3 +60,6 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 - [x] M7.3 Wayland backend: wlr-layer-shell (smithay-client-toolkit); trail starts at screen center where no cursor position is available. Acceptance: tests of non-protocol logic; manual check on Sway/Hyprland/KDE; GNOME documented as notify-only (M4.5).
 - [x] M7.4 Render thread fed by the event loop, never blocking input forwarding. Acceptance: fake-overlay test proving the loop does not block.
 - [x] M7.5 Multi-output and HiDPI. Acceptance: tests of scaling/output mapping.
+
+## M8 MSRV CI fix (approved P12)
+- [x] M8.1 Make the CI `msrv` job green on Rust 1.85.1 without changing Cargo.toml or adding dependencies: re-resolve only notify, notify-types and proptest with `CARGO_RESOLVER_INCOMPATIBLE_RUST_VERSIONS=fallback cargo update -p notify -p notify-types -p proptest`; add `.cargo/config.toml` with `[resolver] incompatible-rust-versions = "fallback"`; the msrv job also runs `cargo test --locked --no-run`. Acceptance: `cargo +1.85.1 build --locked` and `cargo +1.85.1 test --locked --no-run` pass locally; check.sh OK; CI msrv job green after the user pushes.

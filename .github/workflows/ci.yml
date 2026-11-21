@@ -32,6 +32,7 @@ jobs:
           toolchain: ${{ steps.msrv.outputs.v }}
       - uses: Swatinem/rust-cache@v2
       - run: cargo build --locked
+      - run: cargo test --locked --no-run
 
   deny:
     runs-on: ubuntu-latest
