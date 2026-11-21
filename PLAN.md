@@ -1,7 +1,7 @@
 # PLAN (rigid). Changes only via `/approve P<n>`.
 
 Legend: [ ] todo, [x] done. Every task ends with `./scripts/check.sh` OK and follows CLAUDE.md "Definition of done".
-Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-actions, m5-adapters, m6-launch, m7-overlay, m8-msrv.
+Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-actions, m5-adapters, m6-launch, m7-overlay, m8-msrv, m9-x11-pointer.
 
 ## M0 Foundation
 - [x] M0.1 Crate layout: `src/{main,lib,error,config}.rs`, `src/recognizer/`, `src/device/`, `src/sys/`. Acceptance: builds, check.sh OK.
@@ -63,3 +63,6 @@ Branch per milestone: m0-foundation, m1-recognizer, m2-devices, m3-grab, m4-acti
 
 ## M8 MSRV CI fix (approved P12)
 - [x] M8.1 Make the CI `msrv` job green on Rust 1.85.1 without changing Cargo.toml or adding dependencies: re-resolve only notify, notify-types and proptest with `CARGO_RESOLVER_INCOMPATIBLE_RUST_VERSIONS=fallback cargo update -p notify -p notify-types -p proptest`; add `.cargo/config.toml` with `[resolver] incompatible-rust-versions = "fallback"`; the msrv job also runs `cargo test --locked --no-run`. Acceptance: `cargo +1.85.1 build --locked` and `cargo +1.85.1 test --locked --no-run` pass locally; check.sh OK; CI msrv job green after the user pushes.
+
+## M9 X11 overlay tracks the real pointer (approved P13)
+- [ ] M9.1 X11 overlay backend ignores `motion` dx/dy and appends the absolute `QueryPointer` root position per frame (new `Trail` absolute push); fixes the trail detaching under pointer acceleration and the screen-edge drift. Wayland unchanged, known limit noted in README FAQ; CHANGELOG `Fixed` line. No new dependencies. Acceptance: tests for the absolute-position trail (fake position source); check.sh OK; manual check by user on X11 with fast strokes.
