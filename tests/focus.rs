@@ -2,6 +2,8 @@
 //! selection; no answer from the adapter falls back to the global bindings.
 #![allow(clippy::expect_used)] // test helpers outside #[test] fns
 
+mod fake_overlay;
+
 use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use std::rc::Rc;
@@ -10,6 +12,8 @@ use evdev::{EventType, InputEvent, KeyCode, MiscCode, RelativeAxisCode, Synchron
 use strokebind::actions::select;
 use strokebind::config::{Action, Config, Trigger};
 use strokebind::focus::Focused;
+use strokebind::overlay::thread::{spawn, OverlayEvent};
+use strokebind::overlay::Overlay;
 use strokebind::passthrough::{Mode, Output, Passthrough};
 use strokebind::stroke_loop::LoopParams;
 use strokebind::window::{AppId, WindowAdapter};
@@ -163,6 +167,64 @@ fn press_app_selects_app_bindings_and_unknown_falls_back_to_global() {
         vec![
             Some(Action::Key("ctrl+tab".into())),
             Some(Action::Key("alt+right".into()))
+        ]
+    );
+}
+
+/// M7.4: with an overlay attached, the engine still answers at once while the renderer is blocked,
+/// and the renderer gets Begin, the stroke's motion, then End.
+#[test]
+fn overlay_is_fed_without_blocking_the_engine() {
+    for mode in [Mode::Frozen, LIVE] {
+        let (fake, gate, log) = fake_overlay::blocking();
+        let (f, _) = focused(mode, &[]);
+        let mut f = f.with_overlay(spawn(move || Ok(Box::new(fake) as Box<dyn Overlay>)));
+        let t = std::time::Instant::now();
+        assert_eq!(stroke_right(&mut f), "R", "{mode:?}");
+        assert!(t.elapsed() < std::time::Duration::from_secs(1), "{mode:?}");
+        gate.send(()).expect("renderer alive");
+        let seen = fake_overlay::wait_for_end(&log);
+        assert_eq!(
+            seen.first(),
+            Some(&OverlayEvent::Begin),
+            "{mode:?}: {seen:?}"
+        );
+        assert_eq!(seen.last(), Some(&OverlayEvent::End), "{mode:?}: {seen:?}");
+        assert_eq!(fake_overlay::total_motion(&seen), (100, 0), "{mode:?}");
+    }
+}
+
+#[test]
+fn overlay_sees_a_click_as_begin_then_end() {
+    let (fake, gate, log) = fake_overlay::blocking();
+    drop(gate);
+    let (f, _) = focused(LIVE, &[]);
+    let mut f = f.with_overlay(spawn(move || Ok(Box::new(fake) as Box<dyn Overlay>)));
+    press(&mut f);
+    release(&mut f);
+    assert_eq!(
+        fake_overlay::wait_for_end(&log),
+        [OverlayEvent::Begin, OverlayEvent::End]
+    );
+}
+
+#[test]
+fn motion_without_the_trigger_never_reaches_the_overlay() {
+    let (fake, gate, log) = fake_overlay::blocking();
+    drop(gate);
+    let (f, _) = focused(LIVE, &[]);
+    let mut f = f.with_overlay(spawn(move || Ok(Box::new(fake) as Box<dyn Overlay>)));
+    move_x(&mut f, 50);
+    press(&mut f);
+    move_x(&mut f, 7);
+    release(&mut f);
+    move_x(&mut f, 50);
+    assert_eq!(
+        fake_overlay::wait_for_end(&log),
+        [
+            OverlayEvent::Begin,
+            OverlayEvent::Motion(7, 0),
+            OverlayEvent::End
         ]
     );
 }

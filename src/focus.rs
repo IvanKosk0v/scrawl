@@ -5,6 +5,8 @@
 
 use evdev::InputEvent;
 
+use crate::overlay::feed::TrailFeed;
+use crate::overlay::thread::OverlayHandle;
 use crate::passthrough::{Output, Passthrough};
 use crate::window::{AppId, WindowAdapter};
 
@@ -13,6 +15,7 @@ pub struct Focused {
     engine: Passthrough,
     adapter: Box<dyn WindowAdapter>,
     app: Option<AppId>,
+    overlay: Option<(OverlayHandle, TrailFeed)>,
 }
 
 impl std::fmt::Debug for Focused {
@@ -20,6 +23,7 @@ impl std::fmt::Debug for Focused {
         f.debug_struct("Focused")
             .field("engine", &self.engine)
             .field("app", &self.app)
+            .field("overlay", &self.overlay.is_some())
             .finish_non_exhaustive()
     }
 }
@@ -31,15 +35,29 @@ impl Focused {
             engine,
             adapter,
             app: None,
+            overlay: None,
         }
+    }
+
+    /// Also feed the trail overlay: `Begin` at each trigger press, the motion while it is held,
+    /// `End` at release. Sending never waits for rendering.
+    pub fn with_overlay(mut self, handle: OverlayHandle) -> Self {
+        self.overlay = Some((handle, TrailFeed::default()));
+        self
     }
 
     /// Feed one raw event to the engine; samples the focused app when a trigger press starts.
     pub fn push(&mut self, raw: InputEvent) -> Vec<Output> {
         let was_pending = self.engine.is_pending();
         let out = self.engine.push(raw);
-        if !was_pending && self.engine.is_pending() {
+        let pending = self.engine.is_pending();
+        if !was_pending && pending {
             self.app = self.adapter.active_window();
+        }
+        if let Some((handle, feed)) = self.overlay.as_mut() {
+            if let Some(ev) = feed.push(&raw, was_pending, pending) {
+                handle.send(ev);
+            }
         }
         out
     }
