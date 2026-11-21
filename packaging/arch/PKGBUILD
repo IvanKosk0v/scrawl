@@ -1,0 +1,33 @@
+# Maintainer: Ivan Koskov
+pkgname=strokebind
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Mouse-stroke gestures for any Linux Wayland compositor and X11'
+arch=('x86_64' 'aarch64')
+url='https://github.com/IvanKosk0v/strokebind'
+license=('MIT' 'Apache-2.0')
+depends=('glibc' 'gcc-libs')
+makedepends=('cargo')
+optdepends=('libnotify: desktop notifications with feedback = "notify"')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+prepare() {
+  cd "$pkgname-$pkgver"
+  cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
+}
+
+build() {
+  cd "$pkgname-$pkgver"
+  cargo build --release --frozen
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  install -Dm755 target/release/strokebind "$pkgdir/usr/bin/strokebind"
+  install -Dm644 packaging/70-strokebind.rules "$pkgdir/usr/lib/udev/rules.d/70-strokebind.rules"
+  install -Dm644 packaging/strokebind-deb.service "$pkgdir/usr/lib/systemd/user/strokebind.service"
+  install -Dm644 packaging/config.example.toml "$pkgdir/usr/share/doc/strokebind/config.example.toml"
+  install -Dm644 LICENSE-MIT "$pkgdir/usr/share/licenses/$pkgname/LICENSE-MIT"
+  install -Dm644 LICENSE-APACHE "$pkgdir/usr/share/licenses/$pkgname/LICENSE-APACHE"
+}
