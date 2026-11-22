@@ -1,8 +1,8 @@
 //! M1.4: end-to-end property tests of the recognizer pipeline (points -> stroke string).
 
 use proptest::prelude::*;
-use strokebind::recognizer::recognize;
-use strokebind::recognizer::segment::Point;
+use scrawl::recognizer::recognize;
+use scrawl::recognizer::segment::Point;
 
 const MIN_STEP: f64 = 10.0;
 const MIN_RUN: f64 = 30.0;

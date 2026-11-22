@@ -9,7 +9,7 @@ const README: &str = include_str!("../README.md");
 const LICENSE_MIT: &str = include_str!("../LICENSE-MIT");
 const LICENSE_APACHE: &str = include_str!("../LICENSE-APACHE");
 
-const REPO: &str = "https://github.com/IvanKosk0v/strokebind";
+const REPO: &str = "https://github.com/IvanKosk0v/scrawl";
 
 fn manifest_has_line(line: &str) -> bool {
     MANIFEST.lines().any(|l| l.trim() == line)

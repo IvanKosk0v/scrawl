@@ -30,7 +30,7 @@ x11rb: M5 X11 adapter (approved P6) and M7 overlay (shape + xfixes, P1).
 serde_json: M5 Sway/Hyprland IPC replies (approved P6).
 Dev: tempfile, proptest.
 
-## Config sketch (~/.config/strokebind/config.toml)
+## Config sketch (~/.config/scrawl/config.toml)
 ```toml
 trigger = "right"          # right | middle | side | extra
 min_stroke_px = 40

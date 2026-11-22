@@ -13,10 +13,10 @@ use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
 use common::{fake_caps, open_when_ready};
-use strokebind::device::grab::{install_failsafes, Grabbed};
-use strokebind::device::virtual_mouse::VirtualMouse;
-use strokebind::focus::Focused;
-use strokebind::window::GlobalOnly;
+use scrawl::device::grab::{install_failsafes, Grabbed};
+use scrawl::device::virtual_mouse::VirtualMouse;
+use scrawl::focus::Focused;
+use scrawl::window::GlobalOnly;
 
 const NODE_ENV: &str = "SB_CHILD_NODE";
 const MODE_ENV: &str = "SB_CHILD_MODE";
@@ -33,7 +33,7 @@ fn virtual_source(name: &str) -> (VirtualMouse, PathBuf) {
 
 /// True if another fd holds an exclusive grab on `node`.
 fn is_grabbed(node: &Path) -> bool {
-    let mut dev = strokebind::device::source::open_readonly(node).expect("open probe");
+    let mut dev = scrawl::device::source::open_readonly(node).expect("open probe");
     match dev.grab() {
         Ok(()) => {
             dev.ungrab().expect("ungrab probe");
@@ -185,11 +185,11 @@ fn grab_fd_is_cloexec() {
 #[ignore = "needs writable /dev/uinput"]
 fn forward_end_to_end() {
     use evdev::{EventType, InputEvent, KeyCode, RelativeAxisCode};
-    use strokebind::config::Trigger;
-    use strokebind::device::forward::forward;
-    use strokebind::device::virtual_mouse::MouseCaps;
-    use strokebind::passthrough::Passthrough;
-    use strokebind::stroke_loop::LoopParams;
+    use scrawl::config::Trigger;
+    use scrawl::device::forward::forward;
+    use scrawl::device::virtual_mouse::MouseCaps;
+    use scrawl::passthrough::Passthrough;
+    use scrawl::stroke_loop::LoopParams;
 
     let (mut src_vm, node) = virtual_source("Forward Source Test");
     let mut grab = Grabbed::grab(&node).expect("grab");
@@ -245,14 +245,14 @@ fn forward_end_to_end() {
     assert!(res.is_err(), "unplugging the source ends the loop");
 }
 
-/// Start `strokebind run` on `node`; returns once it reports the grab on stderr.
+/// Start `scrawl run` on `node`; returns once it reports the grab on stderr.
 fn spawn_run(node: &Path, timeout_s: &str) -> Child {
     spawn_run_env(node, timeout_s, &[])
 }
 
 /// [`spawn_run`] with extra environment variables.
 fn spawn_run_env(node: &Path, timeout_s: &str, env: &[(&str, &str)]) -> Child {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_strokebind"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_scrawl"))
         .envs(env.iter().copied())
         .args(["run", "--device"])
         .arg(node)
@@ -260,7 +260,7 @@ fn spawn_run_env(node: &Path, timeout_s: &str, env: &[(&str, &str)]) -> Child {
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("spawn strokebind run");
+        .expect("spawn scrawl run");
     let stderr = child.stderr.take().expect("run stderr");
     let (tx, rx) = mpsc::channel();
     std::thread::spawn(move || {
@@ -305,7 +305,7 @@ fn run_escape_chord_exits_and_releases() {
 }
 
 /// Test hook: window lookups in `run` never answer (M5.4).
-const HANG: [(&str, &str); 1] = [("STROKEBIND_TEST_ADAPTER", "hang")];
+const HANG: [(&str, &str); 1] = [("SCRAWL_TEST_ADAPTER", "hang")];
 
 /// M5.4: with a window adapter that never answers, a trigger press does not stop `--timeout`.
 #[test]
@@ -350,12 +350,12 @@ fn run_refuses_unusable_escape_chord() {
     let mut vm = VirtualMouse::create(&caps).expect("create virtual mouse");
     let node = vm.dev_node().expect("dev node");
     drop(open_when_ready(&node));
-    let out = Command::new(env!("CARGO_BIN_EXE_strokebind"))
+    let out = Command::new(env!("CARGO_BIN_EXE_scrawl"))
         .args(["run", "--device"])
         .arg(&node)
         .args(["--timeout", "5"])
         .output()
-        .expect("run strokebind");
+        .expect("run scrawl");
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(!out.status.success(), "{stderr}");
     assert!(stderr.contains("escape chord"), "{stderr}");
@@ -369,9 +369,9 @@ fn run_refuses_unusable_escape_chord() {
 #[ignore = "needs writable /dev/uinput"]
 fn trigger_release_lost_in_overflow_is_recovered() {
     use evdev::{EventType, InputEvent, KeyCode, RelativeAxisCode};
-    use strokebind::config::Trigger;
-    use strokebind::passthrough::{Output, Passthrough};
-    use strokebind::stroke_loop::LoopParams;
+    use scrawl::config::Trigger;
+    use scrawl::passthrough::{Output, Passthrough};
+    use scrawl::stroke_loop::LoopParams;
 
     let (mut vm, node) = virtual_source("Overflow Test");
     let mut dev = open_when_ready(&node);

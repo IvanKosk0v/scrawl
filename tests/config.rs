@@ -1,7 +1,7 @@
 //! M0.3: config parsing and validation.
 
-use strokebind::config::{Action, Config, Feedback, MouseButton, Trigger};
-use strokebind::error::Error;
+use scrawl::config::{Action, Config, Feedback, MouseButton, Trigger};
+use scrawl::error::Error;
 
 const VALID: &str = r#"
 trigger = "right"
@@ -360,7 +360,7 @@ fn empty_profile_device_is_rejected_with_line() {
 
 // ---- M5.2: per-app bindings and profiles ----
 
-use strokebind::window::AppId;
+use scrawl::window::AppId;
 
 const APPS: &str = r#"
 trigger = "right"

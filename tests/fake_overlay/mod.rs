@@ -5,9 +5,9 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use strokebind::error::Error;
-use strokebind::overlay::thread::OverlayEvent;
-use strokebind::overlay::Overlay;
+use scrawl::error::Error;
+use scrawl::overlay::thread::OverlayEvent;
+use scrawl::overlay::Overlay;
 
 /// Records calls; while `gate` is set, the first `motion` waits for a message on it.
 pub struct Fake {

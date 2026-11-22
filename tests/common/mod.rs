@@ -5,7 +5,7 @@ use std::path::Path;
 use std::time::Duration;
 
 use evdev::{AttributeSet, BusType, InputId, KeyCode, MiscCode, PropType, RelativeAxisCode};
-use strokebind::device::virtual_mouse::MouseCaps;
+use scrawl::device::virtual_mouse::MouseCaps;
 
 /// Fake source: capabilities of a typical 5-button wheel mouse.
 pub fn fake_caps(name: &str) -> MouseCaps {
@@ -38,7 +38,7 @@ pub fn fake_caps(name: &str) -> MouseCaps {
 pub fn open_when_ready(node: &Path) -> evdev::Device {
     let mut last = None;
     for _ in 0..40 {
-        match strokebind::device::source::open_readonly(node) {
+        match scrawl::device::source::open_readonly(node) {
             Ok(dev) => return dev,
             Err(e) => last = Some(e),
         }

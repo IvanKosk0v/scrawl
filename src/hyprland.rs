@@ -145,7 +145,7 @@ mod tests {
 
     #[test]
     fn talks_to_a_fake_socket() {
-        let dir = std::env::temp_dir().join(format!("strokebind-hypr-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("scrawl-hypr-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("sock");
         let listener = std::os::unix::net::UnixListener::bind(&path).unwrap();

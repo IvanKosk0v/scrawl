@@ -2,7 +2,7 @@
 
 use std::ffi::OsString;
 
-use strokebind::backend::{display_server, window_backend, DisplayServer, WindowBackend};
+use scrawl::backend::{display_server, window_backend, DisplayServer, WindowBackend};
 
 /// A fake environment holding exactly `vars`.
 fn env(vars: &'static [(&'static str, &'static str)]) -> impl Fn(&str) -> Option<OsString> {

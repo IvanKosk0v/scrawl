@@ -15,8 +15,8 @@ use crate::error::Error;
 /// Path of the uinput control node.
 const UINPUT_PATH: &str = "/dev/uinput";
 
-/// Prefix of every device name strokebind creates, used to recognize (and skip) our own devices.
-pub const NAME_PREFIX: &str = "strokebind: ";
+/// Prefix of every device name scrawl creates, used to recognize (and skip) our own devices.
+pub const NAME_PREFIX: &str = "scrawl: ";
 
 /// Longest name evdev accepts: its builder asserts `len + 1 < UINPUT_MAX_NAME_SIZE (80)`.
 pub const MAX_NAME_LEN: usize = 78;
@@ -92,7 +92,7 @@ pub fn virtual_name(source: &str) -> String {
     name
 }
 
-/// True if `name` belongs to a device strokebind created.
+/// True if `name` belongs to a device scrawl created.
 pub fn is_virtual_name(name: &str) -> bool {
     name.starts_with(NAME_PREFIX)
 }

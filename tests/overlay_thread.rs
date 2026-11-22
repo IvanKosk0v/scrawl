@@ -7,9 +7,9 @@ mod fake_overlay;
 use std::time::{Duration, Instant};
 
 use proptest::prelude::*;
-use strokebind::error::Error;
-use strokebind::overlay::thread::{coalesce, spawn, OverlayEvent};
-use strokebind::overlay::Overlay;
+use scrawl::error::Error;
+use scrawl::overlay::thread::{coalesce, spawn, OverlayEvent};
+use scrawl::overlay::Overlay;
 
 use OverlayEvent::{Begin, End, Motion};
 

@@ -4,9 +4,9 @@
 use std::path::Path;
 use std::time::{Duration, Instant};
 
-use strokebind::config::Config;
-use strokebind::error::Error;
-use strokebind::reload::ConfigWatcher;
+use scrawl::config::Config;
+use scrawl::error::Error;
+use scrawl::reload::ConfigWatcher;
 
 const V1: &str =
     "trigger = \"right\"\n\n[[binding]]\nstroke = \"L\"\naction = { key = \"alt+left\" }\n";
@@ -49,7 +49,7 @@ fn edited_file_is_reloaded() {
     let cfg = wait_for(&mut w).expect("a reload").expect("valid config");
     assert_eq!(
         cfg.binding[0].action,
-        strokebind::config::Action::Key("ctrl+w".into())
+        scrawl::config::Action::Key("ctrl+w".into())
     );
 }
 
@@ -65,7 +65,7 @@ fn file_replaced_by_rename_is_reloaded() {
     let cfg = wait_for(&mut w).expect("a reload").expect("valid config");
     assert_eq!(
         cfg.binding[0].action,
-        strokebind::config::Action::Key("ctrl+w".into())
+        scrawl::config::Action::Key("ctrl+w".into())
     );
 }
 
@@ -82,7 +82,7 @@ fn invalid_edit_is_reported_and_next_good_edit_still_loads() {
     let cfg = wait_for(&mut w).expect("a reload").expect("valid config");
     assert_eq!(
         cfg.binding[0].action,
-        strokebind::config::Action::Key("ctrl+w".into())
+        scrawl::config::Action::Key("ctrl+w".into())
     );
 }
 

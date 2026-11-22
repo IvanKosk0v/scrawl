@@ -4,8 +4,8 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-const UNIT: &str = include_str!("../packaging/strokebind.service");
-const RULE: &str = include_str!("../packaging/70-strokebind.rules");
+const UNIT: &str = include_str!("../packaging/scrawl.service");
+const RULE: &str = include_str!("../packaging/70-scrawl.rules");
 const INSTALL: &str = include_str!("../packaging/install.sh");
 
 fn root() -> PathBuf {
@@ -14,9 +14,7 @@ fn root() -> PathBuf {
 
 #[test]
 fn unit_is_a_user_service_running_the_daemon() {
-    assert!(
-        UNIT.contains("ExecStart=%h/.local/bin/strokebind run --config %E/strokebind/config.toml")
-    );
+    assert!(UNIT.contains("ExecStart=%h/.local/bin/scrawl run --config %E/scrawl/config.toml"));
     assert!(UNIT.contains("WantedBy=graphical-session.target"));
     assert!(UNIT.contains("PartOf=graphical-session.target"));
     assert!(UNIT.contains("Restart=on-failure"));
@@ -74,7 +72,7 @@ fn install_script_parses() {
 
 #[test]
 fn install_copies_files_into_the_user_dirs_and_keeps_an_existing_config() {
-    let tmp = std::env::temp_dir().join(format!("strokebind-install-{}", std::process::id()));
+    let tmp = std::env::temp_dir().join(format!("scrawl-install-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&tmp);
     std::fs::create_dir_all(&tmp).expect("tmp");
     let bin = tmp.join("fake-bin");
@@ -84,8 +82,8 @@ fn install_copies_files_into_the_user_dirs_and_keeps_an_existing_config() {
             .arg(root().join("packaging/install.sh"))
             .env("HOME", home)
             .env_remove("XDG_CONFIG_HOME")
-            .env("STROKEBIND_BIN", &bin)
-            .env("STROKEBIND_NO_SYSTEMCTL", "1")
+            .env("SCRAWL_BIN", &bin)
+            .env("SCRAWL_NO_SYSTEMCTL", "1")
             .output()
             .expect("run install.sh")
     };
@@ -97,15 +95,13 @@ fn install_copies_files_into_the_user_dirs_and_keeps_an_existing_config() {
         "{stdout}{}",
         String::from_utf8_lossy(&out.stderr)
     );
-    assert!(home.join(".local/bin/strokebind").is_file());
-    assert!(home
-        .join(".config/systemd/user/strokebind.service")
-        .is_file());
-    let cfg = home.join(".config/strokebind/config.toml");
+    assert!(home.join(".local/bin/scrawl").is_file());
+    assert!(home.join(".config/systemd/user/scrawl.service").is_file());
+    let cfg = home.join(".config/scrawl/config.toml");
     assert!(cfg.is_file());
     // The root-only step is printed, never executed.
     assert!(
-        stdout.contains("70-strokebind.rules") && stdout.contains("/etc/udev/rules.d"),
+        stdout.contains("70-scrawl.rules") && stdout.contains("/etc/udev/rules.d"),
         "{stdout}"
     );
 
@@ -123,8 +119,8 @@ fn install_copies_files_into_the_user_dirs_and_keeps_an_existing_config() {
 fn install_fails_clearly_without_a_binary() {
     let out = Command::new("bash")
         .arg(root().join("packaging/install.sh"))
-        .env("STROKEBIND_BIN", "/nonexistent/strokebind")
-        .env("STROKEBIND_NO_SYSTEMCTL", "1")
+        .env("SCRAWL_BIN", "/nonexistent/scrawl")
+        .env("SCRAWL_NO_SYSTEMCTL", "1")
         .output()
         .expect("run");
     assert!(!out.status.success());
@@ -133,7 +129,7 @@ fn install_fails_clearly_without_a_binary() {
 
 #[test]
 fn starter_config_passes_check_config() {
-    let out = Command::new(env!("CARGO_BIN_EXE_strokebind"))
+    let out = Command::new(env!("CARGO_BIN_EXE_scrawl"))
         .arg("check-config")
         .arg(root().join("packaging/config.example.toml"))
         .output()
@@ -159,10 +155,10 @@ fn ci_package_job_checks_deb_install_script_unit_and_rule_on_every_push() {
         "cargo deb --locked",
         "dpkg-deb --info",
         "dpkg -i",
-        "strokebind --version",
-        "STROKEBIND_NO_SYSTEMCTL=1",
-        ".local/bin/strokebind",
-        ".config/systemd/user/strokebind.service",
+        "scrawl --version",
+        "SCRAWL_NO_SYSTEMCTL=1",
+        ".local/bin/scrawl",
+        ".config/systemd/user/scrawl.service",
         "systemd-analyze --user verify",
         "udevadm verify",
     ] {
@@ -195,7 +191,7 @@ fn pkgbuild_version_matches_cargo_and_fetches_the_tag() {
         .expect("Cargo.toml version")
         .trim_matches('"');
     assert_eq!(pkgbuild_var("pkgver"), cargo_version);
-    assert_eq!(pkgbuild_var("pkgname"), "strokebind");
+    assert_eq!(pkgbuild_var("pkgname"), "scrawl");
     let source = PKGBUILD
         .lines()
         .find(|l| l.starts_with("source="))
@@ -220,22 +216,22 @@ fn pkgbuild_installs_files_that_exist_into_the_right_places() {
     );
     for words in &installs {
         let src = words[2];
-        if src != "target/release/strokebind" {
+        if src != "target/release/scrawl" {
             assert!(root().join(src).exists(), "{src} does not exist");
         }
     }
     for dest in [
-        "usr/bin/strokebind",
-        "usr/lib/udev/rules.d/70-strokebind.rules",
-        "usr/lib/systemd/user/strokebind.service",
-        "usr/share/doc/strokebind/config.example.toml",
+        "usr/bin/scrawl",
+        "usr/lib/udev/rules.d/70-scrawl.rules",
+        "usr/lib/systemd/user/scrawl.service",
+        "usr/share/doc/scrawl/config.example.toml",
         "usr/share/licenses/$pkgname/LICENSE-MIT",
         "usr/share/licenses/$pkgname/LICENSE-APACHE",
     ] {
         assert!(PKGBUILD.contains(dest), "PKGBUILD does not install {dest}");
     }
     // The unit shipped to /usr/lib is the deb one (absolute /usr/bin path).
-    assert!(PKGBUILD.contains("packaging/strokebind-deb.service"));
+    assert!(PKGBUILD.contains("packaging/scrawl-deb.service"));
 }
 
 #[test]

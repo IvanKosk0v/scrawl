@@ -1,8 +1,7 @@
-# strokebind
+# scrawl
 
 Rust daemon: mouse-stroke gestures on Linux, any Wayland compositor (and X11).
 Reads mouse via evdev, exclusive grab, forwards via uinput, runs actions on recognized strokes.
-Working name; rename only via an approved proposal.
 
 ## Source of truth (read only what the task needs)
 1. `STATE.md` current milestone/task, handoff, decisions, numbered proposals (P1, P2...)

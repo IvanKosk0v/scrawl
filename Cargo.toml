@@ -1,14 +1,22 @@
 [package]
-name = "strokebind"
+name = "scrawld"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.85.1"
 description = "Mouse-stroke gestures for any Linux Wayland compositor (and X11)"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/IvanKosk0v/strokebind"
+repository = "https://github.com/IvanKosk0v/scrawl"
 keywords = ["wayland", "mouse", "gestures", "evdev", "linux"]
 categories = ["command-line-utilities", "os::linux-apis"]
+
+[lib]
+name = "scrawl"
+path = "src/lib.rs"
+
+[[bin]]
+name = "scrawl"
+path = "src/main.rs"
 
 [dependencies]
 thiserror = "2"
@@ -40,15 +48,16 @@ proptest = "1"
 tempfile = "3"
 
 [package.metadata.deb]
+name = "scrawl"
 maintainer = "Ivan Koskov"
 section = "utils"
 priority = "optional"
 extended-description = "Runs actions on mouse-stroke gestures, via evdev grab and uinput, on any Wayland compositor or X11."
 maintainer-scripts = "packaging/debian"
 assets = [
-    ["target/release/strokebind", "usr/bin/", "755"],
-    ["packaging/strokebind-deb.service", "usr/lib/systemd/user/strokebind.service", "644"],
-    ["packaging/70-strokebind.rules", "usr/lib/udev/rules.d/70-strokebind.rules", "644"],
-    ["packaging/config.example.toml", "usr/share/doc/strokebind/", "644"],
-    ["README.md", "usr/share/doc/strokebind/", "644"],
+    ["target/release/scrawl", "usr/bin/", "755"],
+    ["packaging/scrawl-deb.service", "usr/lib/systemd/user/scrawl.service", "644"],
+    ["packaging/70-scrawl.rules", "usr/lib/udev/rules.d/70-scrawl.rules", "644"],
+    ["packaging/config.example.toml", "usr/share/doc/scrawl/", "644"],
+    ["README.md", "usr/share/doc/scrawl/", "644"],
 ]

@@ -32,7 +32,7 @@ use super::Overlay;
 use crate::error::Error;
 
 /// Layer-shell namespace of the overlay surface, for compositor rules (e.g. Hyprland `layerrule`).
-pub const LAYER_NAMESPACE: &str = "strokebind-overlay";
+pub const LAYER_NAMESPACE: &str = "scrawl-overlay";
 
 /// How the layer surface is set up.
 #[derive(Debug, Clone, PartialEq, Eq)]

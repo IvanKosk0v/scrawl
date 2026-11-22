@@ -81,7 +81,7 @@ pub fn install_failsafes() -> Result<(), Error> {
     }
     let mut signals = Signals::new([SIGINT, SIGTERM]).map_err(Error::Signals)?;
     std::thread::Builder::new()
-        .name("strokebind-signals".into())
+        .name("scrawl-signals".into())
         .spawn(move || {
             if let Some(sig) = signals.forever().next() {
                 std::process::exit(128 + sig);

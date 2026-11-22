@@ -1,11 +1,11 @@
 [Unit]
-Description=strokebind mouse-stroke gestures
+Description=scrawl mouse-stroke gestures
 PartOf=graphical-session.target
 After=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=%h/.local/bin/strokebind run --config %E/strokebind/config.toml
+ExecStart=%h/.local/bin/scrawl run --config %E/scrawl/config.toml
 Restart=on-failure
 RestartSec=3
 

@@ -9,14 +9,14 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 
 use evdev::{EventType, InputEvent, KeyCode, MiscCode, RelativeAxisCode, SynchronizationCode};
-use strokebind::actions::select;
-use strokebind::config::{Action, Config, Trigger};
-use strokebind::focus::Focused;
-use strokebind::overlay::thread::{spawn, OverlayEvent};
-use strokebind::overlay::Overlay;
-use strokebind::passthrough::{Mode, Output, Passthrough};
-use strokebind::stroke_loop::LoopParams;
-use strokebind::window::{AppId, WindowAdapter};
+use scrawl::actions::select;
+use scrawl::config::{Action, Config, Trigger};
+use scrawl::focus::Focused;
+use scrawl::overlay::thread::{spawn, OverlayEvent};
+use scrawl::overlay::Overlay;
+use scrawl::passthrough::{Mode, Output, Passthrough};
+use scrawl::stroke_loop::LoopParams;
+use scrawl::window::{AppId, WindowAdapter};
 
 /// Scripted adapter: each call pops the next answer (then `None`) and counts the call.
 struct Mock {

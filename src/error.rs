@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use thiserror::Error;
 
-/// Errors returned by the strokebind library.
+/// Errors returned by the scrawl library.
 #[derive(Debug, Error)]
 pub enum Error {
     /// The requested feature is not available yet.
@@ -13,14 +13,14 @@ pub enum Error {
     /// A device node exists but this user may not read it.
     #[error(
         "permission denied opening {}: add your user to the `input` group and log in again, \
-         or install the strokebind udev rule (see README)",
+         or install the scrawl udev rule (see README)",
         .0.display()
     )]
     PermissionDenied(PathBuf),
     /// The uinput node exists but this user may not write it.
     #[error(
         "permission denied opening {}: add your user to the `input` group and log in again, \
-         or install the strokebind udev rule for uinput (see README)",
+         or install the scrawl udev rule for uinput (see README)",
         .0.display()
     )]
     UinputDenied(PathBuf),
@@ -61,6 +61,20 @@ pub enum Error {
         path: PathBuf,
         /// Underlying error.
         source: std::io::Error,
+    },
+    /// The config file is missing but a v0.1.0 config exists in the old dir.
+    #[error(
+        "{}: not found; your old config is at {} (scrawl no longer reads it). Move it: {mv}",
+        path.display(),
+        old.display()
+    )]
+    OldConfig {
+        /// Config path that was asked for.
+        path: PathBuf,
+        /// The old config file.
+        old: PathBuf,
+        /// Shell command that moves the old config dir.
+        mv: String,
     },
     /// The config file is invalid.
     #[error("{}", format_config(*line, message))]

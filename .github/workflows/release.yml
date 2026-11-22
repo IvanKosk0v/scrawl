@@ -18,12 +18,12 @@ jobs:
       - run: cargo deb --locked
       - name: Inspect and install the package
         run: |
-          deb=$(ls target/debian/strokebind_*.deb)
+          deb=$(ls target/debian/scrawl_*.deb)
           dpkg-deb --info "$deb"
           dpkg-deb --contents "$deb"
           sudo dpkg -i "$deb"
-          strokebind --version
+          scrawl --version
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" target/debian/strokebind_*.deb --title "$GITHUB_REF_NAME" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" target/debian/scrawl_*.deb --title "$GITHUB_REF_NAME" --generate-notes

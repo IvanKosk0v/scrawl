@@ -46,8 +46,8 @@ fn protocol_rects(rects: &[Rect]) -> Vec<Rectangle> {
 }
 
 /// `WM_CLASS` of the overlay window (`instance\0class\0`), so compositor rules can match it,
-/// e.g. picom `animation-exclude = [ "class_g = 'strokebind-overlay'" ]`.
-pub const OVERLAY_WM_CLASS: &[u8] = b"strokebind-overlay\0strokebind-overlay\0";
+/// e.g. picom `animation-exclude = [ "class_g = 'scrawl-overlay'" ]`.
+pub const OVERLAY_WM_CLASS: &[u8] = b"scrawl-overlay\0scrawl-overlay\0";
 
 /// Alpha at or above which a rendered pixel is part of the shape (anti-aliased edges are cut).
 const MASK_ALPHA: u8 = 128;
@@ -196,7 +196,7 @@ fn tag_window(conn: &RustConnection, window: Window) -> Result<(), Error> {
         window,
         AtomEnum::WM_NAME,
         AtomEnum::STRING,
-        b"strokebind overlay",
+        b"scrawl overlay",
     )
     .map_err(x11_err)?;
     conn.change_property32(PropMode::REPLACE, window, wm_type, AtomEnum::ATOM, &[dnd])

@@ -2,13 +2,13 @@
 //! The surface itself: `cargo test --test overlay_wayland -- --ignored` on Sway, Hyprland or KDE
 //! (shows a stroke from screen center for about a second, no grab).
 
-use smithay_client_toolkit::shell::wlr_layer::{Anchor, KeyboardInteractivity, Layer};
-use strokebind::overlay::trail::TrailStyle;
-use strokebind::overlay::wayland::{
+use scrawl::overlay::trail::TrailStyle;
+use scrawl::overlay::wayland::{
     buffer_size, center, flush_result, input_region_rects, layer_settings, no_layer_shell_error,
     recreate_surface, rgba_to_argb8888, WaylandOverlay, LAYER_NAMESPACE,
 };
-use strokebind::overlay::Overlay;
+use scrawl::overlay::Overlay;
+use smithay_client_toolkit::shell::wlr_layer::{Anchor, KeyboardInteractivity, Layer};
 
 #[test]
 fn flush_that_would_block_is_retried_later_not_fatal() {
@@ -95,7 +95,7 @@ fn layer_surface_covers_the_output_above_everything_without_focus() {
     assert_eq!(s.exclusive_zone, -1);
     assert_eq!(s.keyboard, KeyboardInteractivity::None);
     assert_eq!(s.namespace, LAYER_NAMESPACE);
-    assert_eq!(LAYER_NAMESPACE, "strokebind-overlay");
+    assert_eq!(LAYER_NAMESPACE, "scrawl-overlay");
 }
 
 #[test]
