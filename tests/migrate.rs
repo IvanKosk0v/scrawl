@@ -23,10 +23,42 @@ fn old_config_found_when_new_one_is_missing() {
     assert_eq!(
         found.mv,
         format!(
-            "mv {} {}",
+            "mv '{}' '{}'",
             home.path().join("strokebind").display(),
             home.path().join("scrawl").display()
         )
+    );
+}
+
+#[test]
+fn existing_empty_new_dir_gets_a_file_move_not_a_nested_dir() {
+    let home = tempfile::tempdir().expect("tempdir");
+    write(&home.path().join("strokebind/config.toml"));
+    std::fs::create_dir_all(home.path().join("scrawl")).expect("mkdir");
+    let new = home.path().join("scrawl/config.toml");
+    let found = old_config(&new, Some(home.path())).expect("hint");
+    assert_eq!(
+        found.mv,
+        format!(
+            "mv '{}' '{}/'",
+            home.path().join("strokebind/config.toml").display(),
+            home.path().join("scrawl").display()
+        )
+    );
+}
+
+#[test]
+fn mv_command_quotes_paths_with_spaces() {
+    let home = tempfile::tempdir().expect("tempdir");
+    let cfg = home.path().join("my config");
+    write(&cfg.join("strokebind/config.toml"));
+    let found = old_config(&cfg.join("scrawl/config.toml"), Some(&cfg)).expect("hint");
+    assert!(
+        found
+            .mv
+            .contains(&format!("'{}'", cfg.join("strokebind").display())),
+        "{}",
+        found.mv
     );
 }
 
@@ -72,7 +104,10 @@ fn missing_config_error_names_the_old_path_and_the_mv_command() {
         let err = String::from_utf8_lossy(&out.stderr);
         assert!(err.contains(&old.display().to_string()), "{sub:?}: {err}");
         assert!(
-            err.contains(&format!("mv {}", home.path().join("strokebind").display())),
+            err.contains(&format!(
+                "mv '{}'",
+                home.path().join("strokebind").display()
+            )),
             "{sub:?}: {err}"
         );
     }

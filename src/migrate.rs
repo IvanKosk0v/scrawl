@@ -26,7 +26,8 @@ pub fn config_home() -> Option<PathBuf> {
 }
 
 /// If `path` is the default `<home>/scrawl/config.toml`, it does not exist, and
-/// `<home>/strokebind/config.toml` does, return the old file and the `mv` fix.
+/// `<home>/strokebind/config.toml` does, return the old file and the `mv` fix (paths single-quoted;
+/// moves only the file when `<home>/scrawl/` already exists).
 pub fn old_config(path: &Path, home: Option<&Path>) -> Option<OldConfig> {
     let home = home?;
     let new_dir = home.join(NEW_DIR);
@@ -35,8 +36,14 @@ pub fn old_config(path: &Path, home: Option<&Path>) -> Option<OldConfig> {
     }
     let old_dir = home.join(OLD_DIR);
     let old = old_dir.join("config.toml");
-    old.is_file().then(|| OldConfig {
-        mv: format!("mv {} {}", old_dir.display(), new_dir.display()),
-        old,
-    })
+    if !old.is_file() {
+        return None;
+    }
+    // Moving the dir onto an existing one would nest it; move just the file then.
+    let mv = if new_dir.exists() {
+        format!("mv '{}' '{}/'", old.display(), new_dir.display())
+    } else {
+        format!("mv '{}' '{}'", old_dir.display(), new_dir.display())
+    };
+    Some(OldConfig { old, mv })
 }
