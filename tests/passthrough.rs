@@ -2,9 +2,9 @@
 
 use evdev::{EventType, InputEvent, KeyCode, MiscCode, RelativeAxisCode, SynchronizationCode};
 use proptest::prelude::*;
-use strokebind::config::Trigger;
-use strokebind::passthrough::{Mode, Output, Passthrough};
-use strokebind::stroke_loop::LoopParams;
+use scrawl::config::Trigger;
+use scrawl::passthrough::{Mode, Output, Passthrough};
+use scrawl::stroke_loop::LoopParams;
 
 type Ev = (u16, u16, i32);
 

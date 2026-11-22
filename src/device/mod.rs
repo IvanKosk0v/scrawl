@@ -45,7 +45,7 @@ pub fn list_mice() -> Result<Vec<DeviceInfo>, Error> {
     list_mice_in(Path::new(INPUT_DIR))
 }
 
-/// List mice among the `event*` nodes of `dir`, sorted by path. strokebind's own virtual devices are skipped.
+/// List mice among the `event*` nodes of `dir`, sorted by path. scrawl's own virtual devices are skipped.
 ///
 /// Entries and devices that cannot be opened for reasons other than permissions are skipped. If some node was
 /// unreadable and no mouse was found, the permission error is returned so the user gets a hint.

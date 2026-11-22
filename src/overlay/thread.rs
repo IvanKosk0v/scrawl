@@ -104,7 +104,7 @@ where
     ));
     let theirs = Arc::clone(&shared);
     let started = std::thread::Builder::new()
-        .name("strokebind-overlay".into())
+        .name("scrawl-overlay".into())
         .spawn(move || {
             if let Err(e) = make().and_then(|o| render_loop(o, &theirs)) {
                 eprintln!("overlay disabled: {e}");

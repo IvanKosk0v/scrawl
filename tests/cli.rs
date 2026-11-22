@@ -4,10 +4,10 @@ use std::process::Command;
 
 #[test]
 fn help_lists_subcommands() {
-    let out = Command::new(env!("CARGO_BIN_EXE_strokebind"))
+    let out = Command::new(env!("CARGO_BIN_EXE_scrawl"))
         .arg("--help")
         .output()
-        .expect("run strokebind");
+        .expect("run scrawl");
     assert!(out.status.success());
     let text = String::from_utf8_lossy(&out.stdout);
     for cmd in ["record", "run", "check-config", "list-devices"] {
@@ -17,20 +17,20 @@ fn help_lists_subcommands() {
 
 #[test]
 fn check_config_requires_a_file() {
-    let out = Command::new(env!("CARGO_BIN_EXE_strokebind"))
+    let out = Command::new(env!("CARGO_BIN_EXE_scrawl"))
         .arg("check-config")
         .output()
-        .expect("run strokebind");
+        .expect("run scrawl");
     assert!(!out.status.success());
     assert!(String::from_utf8_lossy(&out.stderr).contains("<FILE>"));
 }
 
 #[test]
 fn record_help_lists_options() {
-    let out = Command::new(env!("CARGO_BIN_EXE_strokebind"))
+    let out = Command::new(env!("CARGO_BIN_EXE_scrawl"))
         .args(["record", "--help"])
         .output()
-        .expect("run strokebind");
+        .expect("run scrawl");
     assert!(out.status.success());
     let text = String::from_utf8_lossy(&out.stdout);
     for opt in ["--device", "--config"] {
@@ -43,10 +43,10 @@ fn record_help_lists_options() {
 
 #[test]
 fn run_help_lists_options() {
-    let out = Command::new(env!("CARGO_BIN_EXE_strokebind"))
+    let out = Command::new(env!("CARGO_BIN_EXE_scrawl"))
         .args(["run", "--help"])
         .output()
-        .expect("run strokebind");
+        .expect("run scrawl");
     assert!(out.status.success());
     let text = String::from_utf8_lossy(&out.stdout);
     for opt in ["--device", "--config", "--timeout"] {
@@ -56,10 +56,10 @@ fn run_help_lists_options() {
 
 #[test]
 fn run_rejects_zero_timeout() {
-    let out = Command::new(env!("CARGO_BIN_EXE_strokebind"))
+    let out = Command::new(env!("CARGO_BIN_EXE_scrawl"))
         .args(["run", "--timeout", "0"])
         .output()
-        .expect("run strokebind");
+        .expect("run scrawl");
     assert!(!out.status.success());
     assert!(String::from_utf8_lossy(&out.stderr).contains("--timeout"));
 }

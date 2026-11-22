@@ -1,4 +1,4 @@
-# strokebind starter config. Check it with: strokebind check-config <this file>
+# scrawl starter config. Check it with: scrawl check-config <this file>
 trigger = "right"
 
 [[binding]]

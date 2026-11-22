@@ -1,4 +1,4 @@
-//! strokebind: mouse-stroke gestures on Linux via evdev/uinput.
+//! scrawl: mouse-stroke gestures on Linux via evdev/uinput.
 
 pub mod actions;
 pub mod backend;

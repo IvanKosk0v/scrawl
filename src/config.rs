@@ -322,7 +322,7 @@ impl TryFrom<RawProfile> for Profile {
     fn try_from(raw: RawProfile) -> Result<Self, String> {
         if raw.device.is_none() && raw.app.is_none() {
             return Err(
-                "a profile needs `device` (part of a mouse name, see `strokebind \
+                "a profile needs `device` (part of a mouse name, see `scrawl \
                         list-devices`) or `app` (window class or app_id)"
                     .into(),
             );
@@ -561,7 +561,7 @@ fn non_blank<'de, D: serde::Deserializer<'de>>(d: D) -> Result<Option<String>, D
     let s = String::deserialize(d)?;
     if s.trim().is_empty() {
         return Err(serde::de::Error::custom(
-            "profile device must name part of a mouse name (see `strokebind list-devices`); \
+            "profile device must name part of a mouse name (see `scrawl list-devices`); \
              an empty one would match every mouse",
         ));
     }

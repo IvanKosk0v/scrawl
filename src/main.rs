@@ -2,30 +2,30 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use clap::Parser;
-use strokebind::actions::{command, feedback, select, Actions};
-use strokebind::backend::{window_backend, WindowBackend};
-use strokebind::check::check;
-use strokebind::cli::{CheckArgs, Cli, Command, RecordArgs, RunArgs};
-use strokebind::config::{Config, Resolved, DEFAULT_CLICK_SLOP_PX};
-use strokebind::device;
-use strokebind::device::forward::forward;
-use strokebind::device::grab::{install_failsafes, Grabbed};
-use strokebind::device::source::{button_code, EvdevSource};
-use strokebind::device::virtual_mouse::{MouseCaps, VirtualMouse};
-use strokebind::error::Error;
-use strokebind::focus::Focused;
-use strokebind::hyprland::{socket_path, HyprlandAdapter};
-use strokebind::overlay::thread::{spawn, OverlayHandle};
-use strokebind::overlay::trail::TrailStyle;
-use strokebind::overlay::wayland::WaylandOverlay;
-use strokebind::overlay::x11::X11Overlay;
-use strokebind::overlay::{overlay_backend, Overlay, OverlayBackend};
-use strokebind::passthrough::{Mode, Passthrough};
-use strokebind::reload::ConfigWatcher;
-use strokebind::stroke_loop::{run_events, LoopParams};
-use strokebind::sway::SwayAdapter;
-use strokebind::window::{Bounded, GlobalOnly, NeverAnswers};
-use strokebind::x11::X11Adapter;
+use scrawl::actions::{command, feedback, select, Actions};
+use scrawl::backend::{window_backend, WindowBackend};
+use scrawl::check::check;
+use scrawl::cli::{CheckArgs, Cli, Command, RecordArgs, RunArgs};
+use scrawl::config::{Config, Resolved, DEFAULT_CLICK_SLOP_PX};
+use scrawl::device;
+use scrawl::device::forward::forward;
+use scrawl::device::grab::{install_failsafes, Grabbed};
+use scrawl::device::source::{button_code, EvdevSource};
+use scrawl::device::virtual_mouse::{MouseCaps, VirtualMouse};
+use scrawl::error::Error;
+use scrawl::focus::Focused;
+use scrawl::hyprland::{socket_path, HyprlandAdapter};
+use scrawl::overlay::thread::{spawn, OverlayHandle};
+use scrawl::overlay::trail::TrailStyle;
+use scrawl::overlay::wayland::WaylandOverlay;
+use scrawl::overlay::x11::X11Overlay;
+use scrawl::overlay::{overlay_backend, Overlay, OverlayBackend};
+use scrawl::passthrough::{Mode, Passthrough};
+use scrawl::reload::ConfigWatcher;
+use scrawl::stroke_loop::{run_events, LoopParams};
+use scrawl::sway::SwayAdapter;
+use scrawl::window::{Bounded, GlobalOnly, NeverAnswers};
+use scrawl::x11::X11Adapter;
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
@@ -239,10 +239,10 @@ fn start_overlay() -> Option<OverlayHandle> {
 }
 
 /// The bounded window adapter for `run`, picked from the session environment; backends without an
-/// adapter (KDE, GNOME) use the global bindings. `STROKEBIND_TEST_ADAPTER=hang` is a test hook:
+/// adapter (KDE, GNOME) use the global bindings. `SCRAWL_TEST_ADAPTER=hang` is a test hook:
 /// lookups never answer.
 fn window_adapter() -> Bounded {
-    if std::env::var_os("STROKEBIND_TEST_ADAPTER").is_some_and(|v| v == "hang") {
+    if std::env::var_os("SCRAWL_TEST_ADAPTER").is_some_and(|v| v == "hang") {
         return Bounded::new(NeverAnswers);
     }
     match window_backend(|k| std::env::var_os(k)) {

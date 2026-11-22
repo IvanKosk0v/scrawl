@@ -1,4 +1,0 @@
-# strokebind: let the user at the active seat open /dev/uinput and mouse event nodes.
-# Install as root: cp 70-strokebind.rules /etc/udev/rules.d/ && udevadm control --reload && udevadm trigger
-KERNEL=="uinput", SUBSYSTEM=="misc", OPTIONS+="static_node=uinput", TAG+="uaccess"
-SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT_MOUSE}=="1", TAG+="uaccess"

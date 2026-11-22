@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use thiserror::Error;
 
-/// Errors returned by the strokebind library.
+/// Errors returned by the scrawl library.
 #[derive(Debug, Error)]
 pub enum Error {
     /// The requested feature is not available yet.
@@ -13,14 +13,14 @@ pub enum Error {
     /// A device node exists but this user may not read it.
     #[error(
         "permission denied opening {}: add your user to the `input` group and log in again, \
-         or install the strokebind udev rule (see README)",
+         or install the scrawl udev rule (see README)",
         .0.display()
     )]
     PermissionDenied(PathBuf),
     /// The uinput node exists but this user may not write it.
     #[error(
         "permission denied opening {}: add your user to the `input` group and log in again, \
-         or install the strokebind udev rule for uinput (see README)",
+         or install the scrawl udev rule for uinput (see README)",
         .0.display()
     )]
     UinputDenied(PathBuf),

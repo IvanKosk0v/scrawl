@@ -12,9 +12,9 @@ pub fn notify_argv(stroke: &str, matched: bool) -> Vec<String> {
     };
     [
         "notify-send",
-        "--app-name=strokebind",
+        "--app-name=scrawl",
         "--expire-time=1500",
-        "strokebind",
+        "scrawl",
     ]
     .into_iter()
     .map(str::to_owned)
@@ -65,9 +65,9 @@ mod tests {
             spawned,
             vec![strings(&[
                 "notify-send",
-                "--app-name=strokebind",
+                "--app-name=scrawl",
                 "--expire-time=1500",
-                "strokebind",
+                "scrawl",
                 "L-U",
             ])]
         );

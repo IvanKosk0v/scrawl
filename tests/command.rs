@@ -4,8 +4,8 @@ use std::ffi::OsStr;
 use std::path::Path;
 use std::time::{Duration, Instant};
 
-use strokebind::actions::command::{build_command, sanitized_env, spawn_detached, DEFAULT_PATH};
-use strokebind::error::Error;
+use scrawl::actions::command::{build_command, sanitized_env, spawn_detached, DEFAULT_PATH};
+use scrawl::error::Error;
 
 fn argv(items: &[&str]) -> Vec<String> {
     items.iter().map(|s| (*s).to_owned()).collect()
@@ -109,11 +109,11 @@ fn empty_argv_is_rejected() {
 
 #[test]
 fn missing_program_reports_its_name() {
-    let err = spawn_detached(&argv(&["strokebind-no-such-program-xyz"]), Vec::new())
+    let err = spawn_detached(&argv(&["scrawl-no-such-program-xyz"]), Vec::new())
         .expect_err("program does not exist");
     let msg = err.to_string();
     assert!(matches!(err, Error::Spawn { .. }), "{err:?}");
-    assert!(msg.contains("strokebind-no-such-program-xyz"), "{msg}");
+    assert!(msg.contains("scrawl-no-such-program-xyz"), "{msg}");
 }
 
 #[test]

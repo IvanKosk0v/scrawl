@@ -6,16 +6,14 @@ use std::path::PathBuf;
 
 use common::{fake_caps, open_when_ready};
 use evdev::{EventType, KeyCode, RelativeAxisCode};
-use strokebind::config::Escape;
-use strokebind::device::virtual_mouse::{
-    is_virtual_name, virtual_name, VirtualMouse, MAX_NAME_LEN,
-};
-use strokebind::error::Error;
+use scrawl::config::Escape;
+use scrawl::device::virtual_mouse::{is_virtual_name, virtual_name, VirtualMouse, MAX_NAME_LEN};
+use scrawl::error::Error;
 
 #[test]
 fn virtual_name_has_prefix() {
     let n = virtual_name("Logitech USB Optical Mouse");
-    assert_eq!(n, "strokebind: Logitech USB Optical Mouse");
+    assert_eq!(n, "scrawl: Logitech USB Optical Mouse");
     assert!(is_virtual_name(&n));
 }
 
@@ -25,15 +23,15 @@ fn virtual_name_truncates_to_uinput_limit() {
     let n = virtual_name(&long);
     assert!(n.len() <= MAX_NAME_LEN, "{} bytes", n.len());
     const { assert!(MAX_NAME_LEN + 1 < 80, "evdev asserts name.len() + 1 < 80") };
-    assert!(n.starts_with("strokebind: ü"));
+    assert!(n.starts_with("scrawl: ü"));
     assert!(n.ends_with('ü'), "cut on a char boundary");
 }
 
 #[test]
 fn is_virtual_name_detects_own_devices() {
-    assert!(is_virtual_name("strokebind: x"));
+    assert!(is_virtual_name("scrawl: x"));
     assert!(!is_virtual_name("Logitech USB Optical Mouse"));
-    assert!(!is_virtual_name("my strokebind: mouse"));
+    assert!(!is_virtual_name("my scrawl: mouse"));
 }
 
 #[test]
@@ -53,7 +51,7 @@ fn uinput_mirrors_fake_caps() {
     let node = vm.dev_node().expect("dev node");
     let dev = open_when_ready(&node);
 
-    assert_eq!(dev.name(), Some("strokebind: Fake Test Mouse"));
+    assert_eq!(dev.name(), Some("scrawl: Fake Test Mouse"));
     assert_eq!(dev.input_id(), caps.id);
     let keys: Vec<_> = dev
         .supported_keys()

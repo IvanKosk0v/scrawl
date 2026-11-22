@@ -64,7 +64,7 @@ fn every_toml_block_in_the_readme_passes_check_config() {
         let path =
             std::env::temp_dir().join(format!("strokebind-readme-{}-{i}.toml", std::process::id()));
         std::fs::write(&path, body).expect("write temp config");
-        let out = std::process::Command::new(env!("CARGO_BIN_EXE_strokebind"))
+        let out = std::process::Command::new(env!("CARGO_BIN_EXE_scrawl"))
             .arg("check-config")
             .arg(&path)
             .output()
@@ -83,7 +83,7 @@ fn every_toml_block_in_the_readme_passes_check_config() {
 #[test]
 fn every_strokebind_subcommand_and_flag_in_the_readme_exists() {
     let help = |args: &[&str]| {
-        let out = std::process::Command::new(env!("CARGO_BIN_EXE_strokebind"))
+        let out = std::process::Command::new(env!("CARGO_BIN_EXE_scrawl"))
             .args(args)
             .output()
             .expect("run strokebind");

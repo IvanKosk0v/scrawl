@@ -1,9 +1,9 @@
 //! M2.2: event loop driven by a fake event source.
 
-use strokebind::config::{Config, Trigger};
-use strokebind::device::InputEvent;
-use strokebind::error::Error;
-use strokebind::stroke_loop::{run_events, LoopParams};
+use scrawl::config::{Config, Trigger};
+use scrawl::device::InputEvent;
+use scrawl::error::Error;
+use scrawl::stroke_loop::{run_events, LoopParams};
 
 fn press(t: Trigger) -> InputEvent {
     InputEvent::Button {

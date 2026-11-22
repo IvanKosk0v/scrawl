@@ -7,11 +7,11 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use evdev::{EventType, InputEvent, KeyCode, RelativeAxisCode, SynchronizationCode};
-use strokebind::config::Trigger;
-use strokebind::focus::Focused;
-use strokebind::passthrough::{Mode, Output, Passthrough};
-use strokebind::stroke_loop::LoopParams;
-use strokebind::window::{AppId, Bounded, NeverAnswers, WindowAdapter, ADAPTER_TIMEOUT};
+use scrawl::config::Trigger;
+use scrawl::focus::Focused;
+use scrawl::passthrough::{Mode, Output, Passthrough};
+use scrawl::stroke_loop::LoopParams;
+use scrawl::window::{AppId, Bounded, NeverAnswers, WindowAdapter, ADAPTER_TIMEOUT};
 
 /// Generous slack over the bound for slow CI schedulers; the bound itself is asserted separately.
 const SLACK: Duration = Duration::from_millis(50);

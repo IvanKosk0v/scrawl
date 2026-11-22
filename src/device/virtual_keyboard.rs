@@ -1,4 +1,4 @@
-//! uinput virtual keyboard that performs key-combo actions. strokebind never reads or grabs real keyboards.
+//! uinput virtual keyboard that performs key-combo actions. scrawl never reads or grabs real keyboards.
 
 use std::path::PathBuf;
 
@@ -15,7 +15,7 @@ pub struct VirtualKeyboard {
 }
 
 impl VirtualKeyboard {
-    /// Create the keyboard, named `strokebind: keyboard`.
+    /// Create the keyboard, named `scrawl: keyboard`.
     pub fn create() -> Result<Self, Error> {
         let name = format!("{NAME_PREFIX}keyboard");
         let dev = VirtualDevice::builder()

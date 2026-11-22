@@ -2,12 +2,12 @@
 //! The window itself: `cargo test --test overlay_x11 -- --ignored` on an X11 session (shows a
 //! stroke for about a second, no grab).
 
-use strokebind::overlay::trail::{Trail, TrailStyle};
-use strokebind::overlay::x11::{
+use scrawl::overlay::trail::{Trail, TrailStyle};
+use scrawl::overlay::x11::{
     input_region, mask_rects, rgb_pixel, track, trail_bbox, window_attributes, Rect, X11Overlay,
     OVERLAY_WM_CLASS,
 };
-use strokebind::overlay::Overlay;
+use scrawl::overlay::Overlay;
 
 fn rect(x: i16, y: i16, width: u16, height: u16) -> Rect {
     Rect {
@@ -180,9 +180,9 @@ fn x11_overlay_end_hides_by_shape_without_unmapping() {
 }
 
 #[test]
-fn overlay_wm_class_is_strokebind_overlay() {
-    let id = strokebind::x11::parse_wm_class(OVERLAY_WM_CLASS).unwrap();
-    assert_eq!(id.as_str(), "strokebind-overlay");
+fn overlay_wm_class_is_scrawl_overlay() {
+    let id = scrawl::x11::parse_wm_class(OVERLAY_WM_CLASS).unwrap();
+    assert_eq!(id.as_str(), "scrawl-overlay");
 }
 
 #[test]

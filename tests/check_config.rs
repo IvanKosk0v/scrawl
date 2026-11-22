@@ -13,11 +13,11 @@ fn fixtures() -> PathBuf {
 
 /// Run `check-config <file>` from the fixture directory so printed paths are stable.
 fn check_config(file: &str) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_strokebind"))
+    Command::new(env!("CARGO_BIN_EXE_scrawl"))
         .current_dir(fixtures())
         .args(["check-config", file])
         .output()
-        .expect("run strokebind")
+        .expect("run scrawl")
 }
 
 fn golden(name: &str) -> String {

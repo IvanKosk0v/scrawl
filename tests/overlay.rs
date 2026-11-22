@@ -3,8 +3,8 @@
 use std::ffi::OsString;
 
 use proptest::prelude::*;
-use strokebind::overlay::trail::{render, Trail, TrailStyle, MAX_TRAIL_POINTS};
-use strokebind::overlay::{overlay_backend, OverlayBackend};
+use scrawl::overlay::trail::{render, Trail, TrailStyle, MAX_TRAIL_POINTS};
+use scrawl::overlay::{overlay_backend, OverlayBackend};
 
 /// A fake environment holding exactly `vars`.
 fn env(vars: &'static [(&'static str, &'static str)]) -> impl Fn(&str) -> Option<OsString> {

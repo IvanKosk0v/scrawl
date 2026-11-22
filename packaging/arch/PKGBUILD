@@ -1,10 +1,10 @@
 # Maintainer: Ivan Koskov
-pkgname=strokebind
+pkgname=scrawl
 pkgver=0.1.0
 pkgrel=1
 pkgdesc='Mouse-stroke gestures for any Linux Wayland compositor and X11'
 arch=('x86_64' 'aarch64')
-url='https://github.com/IvanKosk0v/strokebind'
+url='https://github.com/IvanKosk0v/scrawl'
 license=('MIT' 'Apache-2.0')
 depends=('glibc' 'gcc-libs')
 makedepends=('cargo')
@@ -24,10 +24,10 @@ build() {
 
 package() {
   cd "$pkgname-$pkgver"
-  install -Dm755 target/release/strokebind "$pkgdir/usr/bin/strokebind"
-  install -Dm644 packaging/70-strokebind.rules "$pkgdir/usr/lib/udev/rules.d/70-strokebind.rules"
-  install -Dm644 packaging/strokebind-deb.service "$pkgdir/usr/lib/systemd/user/strokebind.service"
-  install -Dm644 packaging/config.example.toml "$pkgdir/usr/share/doc/strokebind/config.example.toml"
+  install -Dm755 target/release/scrawl "$pkgdir/usr/bin/scrawl"
+  install -Dm644 packaging/70-scrawl.rules "$pkgdir/usr/lib/udev/rules.d/70-scrawl.rules"
+  install -Dm644 packaging/scrawl-deb.service "$pkgdir/usr/lib/systemd/user/scrawl.service"
+  install -Dm644 packaging/config.example.toml "$pkgdir/usr/share/doc/scrawl/config.example.toml"
   install -Dm644 LICENSE-MIT "$pkgdir/usr/share/licenses/$pkgname/LICENSE-MIT"
   install -Dm644 LICENSE-APACHE "$pkgdir/usr/share/licenses/$pkgname/LICENSE-APACHE"
 }

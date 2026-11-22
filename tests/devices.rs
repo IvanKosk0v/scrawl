@@ -4,8 +4,8 @@ use std::fs::{self, File};
 use std::os::unix::fs::PermissionsExt;
 
 use evdev::{AttributeSet, KeyCode, RelativeAxisCode};
-use strokebind::device::{is_mouse, list_mice_in};
-use strokebind::error::Error;
+use scrawl::device::{is_mouse, list_mice_in};
+use scrawl::error::Error;
 
 fn keys(codes: &[KeyCode]) -> AttributeSet<KeyCode> {
     codes.iter().copied().collect()

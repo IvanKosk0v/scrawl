@@ -4,37 +4,34 @@
 use std::process::Command;
 
 const MANIFEST: &str = include_str!("../Cargo.toml");
-const USER_UNIT: &str = include_str!("../packaging/strokebind.service");
-const DEB_UNIT: &str = include_str!("../packaging/strokebind-deb.service");
+const USER_UNIT: &str = include_str!("../packaging/scrawl.service");
+const DEB_UNIT: &str = include_str!("../packaging/scrawl-deb.service");
 const POSTINST: &str = include_str!("../packaging/debian/postinst");
 const RELEASE: &str = include_str!("../.github/workflows/release.yml");
 
 #[test]
 fn version_flag_prints_the_package_version() {
-    let out = Command::new(env!("CARGO_BIN_EXE_strokebind"))
+    let out = Command::new(env!("CARGO_BIN_EXE_scrawl"))
         .arg("--version")
         .output()
         .expect("run");
     assert!(out.status.success());
     let text = String::from_utf8_lossy(&out.stdout);
-    assert_eq!(
-        text.trim(),
-        format!("strokebind {}", env!("CARGO_PKG_VERSION"))
-    );
+    assert_eq!(text.trim(), format!("scrawl {}", env!("CARGO_PKG_VERSION")));
 }
 
 #[test]
 fn manifest_has_deb_metadata_with_all_assets() {
     assert!(MANIFEST.contains("[package.metadata.deb]"));
     for needle in [
-        "target/release/strokebind",
+        "target/release/scrawl",
         "usr/bin/",
-        "packaging/strokebind-deb.service",
-        "usr/lib/systemd/user/strokebind.service",
-        "packaging/70-strokebind.rules",
-        "usr/lib/udev/rules.d/70-strokebind.rules",
+        "packaging/scrawl-deb.service",
+        "usr/lib/systemd/user/scrawl.service",
+        "packaging/70-scrawl.rules",
+        "usr/lib/udev/rules.d/70-scrawl.rules",
         "packaging/config.example.toml",
-        "usr/share/doc/strokebind/",
+        "usr/share/doc/scrawl/",
         "maintainer-scripts = \"packaging/debian\"",
     ] {
         assert!(MANIFEST.contains(needle), "Cargo.toml lacks {needle}");
@@ -43,7 +40,7 @@ fn manifest_has_deb_metadata_with_all_assets() {
 
 #[test]
 fn deb_unit_differs_from_the_user_unit_only_in_the_binary_path() {
-    let swap = USER_UNIT.replace("%h/.local/bin/strokebind", "/usr/bin/strokebind");
+    let swap = USER_UNIT.replace("%h/.local/bin/scrawl", "/usr/bin/scrawl");
     assert_eq!(swap, DEB_UNIT);
 }
 

@@ -53,18 +53,18 @@ jobs:
       - run: cargo deb --locked
       - name: Install the .deb
         run: |
-          deb=$(ls target/debian/strokebind_*.deb)
+          deb=$(ls target/debian/scrawl_*.deb)
           dpkg-deb --info "$deb"
           dpkg-deb --contents "$deb"
           sudo dpkg -i "$deb"
-          strokebind --version
+          scrawl --version
       - name: Per-user install.sh
         run: |
-          STROKEBIND_NO_SYSTEMCTL=1 STROKEBIND_BIN=/usr/bin/strokebind ./packaging/install.sh
-          test -x ~/.local/bin/strokebind
-          test -f ~/.config/systemd/user/strokebind.service
-          ~/.local/bin/strokebind check-config ~/.config/strokebind/config.toml
+          SCRAWL_NO_SYSTEMCTL=1 SCRAWL_BIN=/usr/bin/scrawl ./packaging/install.sh
+          test -x ~/.local/bin/scrawl
+          test -f ~/.config/systemd/user/scrawl.service
+          ~/.local/bin/scrawl check-config ~/.config/scrawl/config.toml
       - name: Verify unit and udev rule
         run: |
-          systemd-analyze --user verify ~/.config/systemd/user/strokebind.service
-          udevadm verify packaging/70-strokebind.rules
+          systemd-analyze --user verify ~/.config/systemd/user/scrawl.service
+          udevadm verify packaging/70-scrawl.rules

@@ -1,10 +1,10 @@
 //! M2.3: raw evdev reports -> InputEvent -> stroke, using a fake raw source (no hardware).
 
 use evdev::{EventType, InputEvent as Raw, KeyCode, RelativeAxisCode, SynchronizationCode};
-use strokebind::config::Trigger;
-use strokebind::device::source::ReportMapper;
-use strokebind::device::InputEvent;
-use strokebind::stroke_loop::{run_events, LoopParams};
+use scrawl::config::Trigger;
+use scrawl::device::source::ReportMapper;
+use scrawl::device::InputEvent;
+use scrawl::stroke_loop::{run_events, LoopParams};
 
 fn rel(axis: RelativeAxisCode, v: i32) -> Raw {
     Raw::new(EventType::RELATIVE.0, axis.0, v)

@@ -4,8 +4,8 @@ mod common;
 
 use evdev::{EventType, KeyCode};
 use proptest::prelude::*;
-use strokebind::actions::key::{keyboard_keys, KeyCombo};
-use strokebind::device::virtual_keyboard::VirtualKeyboard;
+use scrawl::actions::key::{keyboard_keys, KeyCombo};
+use scrawl::device::virtual_keyboard::VirtualKeyboard;
 
 fn combo(s: &str) -> KeyCombo {
     match s.parse() {
@@ -161,7 +161,7 @@ fn virtual_keyboard_emits_the_sequence() {
         Err(e) => panic!("keyboard node: {e}"),
     };
     let mut reader = common::open_when_ready(&node);
-    assert_eq!(reader.name(), Some("strokebind: keyboard"));
+    assert_eq!(reader.name(), Some("scrawl: keyboard"));
     if let Err(e) = kb.press(&c) {
         panic!("press: {e}");
     }

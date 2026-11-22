@@ -6,7 +6,7 @@ use clap::{Args, Parser, Subcommand};
 
 /// Mouse-stroke gestures for Linux.
 #[derive(Debug, Parser)]
-#[command(version, about)]
+#[command(name = "scrawl", version, about)]
 pub struct Cli {
     /// Subcommand to run.
     #[command(subcommand)]

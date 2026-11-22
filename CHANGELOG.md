@@ -3,10 +3,11 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+- Renamed to scrawl: binary `scrawl`, crate `scrawld`, Debian/Arch package `scrawl`; unit, udev rule, config dir, overlay class and `SCRAWL_*` variables follow the new name.
 - Stroke trail overlay: `overlay = true` draws the stroke while the trigger is held, on X11 and on wlr-layer-shell Wayland compositors (Sway, Hyprland, KDE; not GNOME). Drawing runs on its own thread and never delays mouse input.
 - X11 overlay: the trail follows the real cursor instead of falling behind on fast moves (pointer acceleration) or drifting past the screen edge.
 - Wayland trail follows the focused monitor on multi-monitor setups, survives a monitor being unplugged and is drawn sharp on HiDPI (integer scale) outputs.
-- Arch/Artix package: `packaging/arch/PKGBUILD` (`cd packaging/arch && makepkg -si`) builds strokebind from the release tag and installs the binary, udev rule, user unit, example config and licenses.
+- Arch/Artix package: `packaging/arch/PKGBUILD` (`cd packaging/arch && makepkg -si`) builds scrawl from the release tag and installs the binary, udev rule, user unit, example config and licenses.
 
 ## [0.1.0] - 2026-11-21
 - README rewritten for launch: pitch, install, quick start, config examples (checked by tests), comparison table, FAQ and a demo GIF (`docs/demo.gif`).
