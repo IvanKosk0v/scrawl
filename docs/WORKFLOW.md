@@ -4,7 +4,7 @@
 1. Install Claude Code (npm package `@anthropic-ai/claude-code`; the official overview docs also describe a native installer).
 2. Install Rust via https://rustup.rs (the repo's `rust-toolchain.toml` pulls rustfmt and clippy automatically).
    Optional but recommended: `cargo install cargo-deny cargo-msrv` (check.sh runs deny automatically when installed).
-3. `cd strokebind && chmod +x scripts/check.sh .claude/hooks/rustfmt.sh`
+3. `cd scrawl && chmod +x scripts/check.sh .claude/hooks/rustfmt.sh`
 4. `git init -b main && git add -A && git commit -m "chore: initial plan and Claude Code setup"`
 5. Edit `LICENSE-MIT` and put your real name in the copyright line.
 6. Run `claude` in the folder and sign in. Run `/context` once to see the baseline, `/hooks` and `/permissions` to confirm they loaded.
@@ -47,7 +47,7 @@ Having an idea mid-task: `/note IDEA: support scroll-wheel gestures`. Later `/in
 
 ## Safety for hardware tests
 M3 grabs your real mouse. First grab test: run with `--timeout 10`. Know how to kill it from the keyboard
-(Ctrl+C in the terminal, or switch to a TTY with Ctrl+Alt+F3 and `pkill strokebind`). Keep a second pointing device handy.
+(Ctrl+C in the terminal, or switch to a TTY with Ctrl+Alt+F3 and `pkill scrawl`). Keep a second pointing device handy.
 
 ## Known limits of this setup
 - It was assembled without running Claude Code itself. If a command or hook misbehaves, run `/hooks`, `/permissions` and `/help`

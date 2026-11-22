@@ -3,7 +3,7 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 versioning: [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
-- Renamed to scrawl: binary `scrawl`, crate `scrawld`, Debian/Arch package `scrawl`; unit, udev rule, config dir, overlay class and `SCRAWL_*` variables follow the new name.
+- Renamed strokebind to scrawl (see README "Migrating from strokebind"): binary `strokebind` -> `scrawl`, crate `scrawld`, Debian/Arch package `scrawl`, config dir `~/.config/strokebind/` -> `~/.config/scrawl/`, unit `strokebind.service` -> `scrawl.service`, udev rule `70-strokebind.rules` -> `70-scrawl.rules`, picom/WM class and layer namespace `strokebind-overlay` -> `scrawl-overlay`, virtual devices `strokebind: ...` -> `scrawl: ...`, env vars `STROKEBIND_*` -> `SCRAWL_*`. A missing `~/.config/scrawl/config.toml` with an old config present now fails with the `mv` command instead of starting without it.
 - Stroke trail overlay: `overlay = true` draws the stroke while the trigger is held, on X11 and on wlr-layer-shell Wayland compositors (Sway, Hyprland, KDE; not GNOME). Drawing runs on its own thread and never delays mouse input.
 - X11 overlay: the trail follows the real cursor instead of falling behind on fast moves (pointer acceleration) or drifting past the screen edge.
 - Wayland trail follows the focused monitor on multi-monitor setups, survives a monitor being unplugged and is drawn sharp on HiDPI (integer scale) outputs.

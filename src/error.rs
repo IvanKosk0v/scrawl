@@ -62,6 +62,20 @@ pub enum Error {
         /// Underlying error.
         source: std::io::Error,
     },
+    /// The config file is missing but a v0.1.0 config exists in the old dir.
+    #[error(
+        "{}: not found; your old config is at {} (scrawl no longer reads it). Move it: {mv}",
+        path.display(),
+        old.display()
+    )]
+    OldConfig {
+        /// Config path that was asked for.
+        path: PathBuf,
+        /// The old config file.
+        old: PathBuf,
+        /// Shell command that moves the old config dir.
+        mv: String,
+    },
     /// The config file is invalid.
     #[error("{}", format_config(*line, message))]
     Config {

@@ -1,6 +1,6 @@
 # Security policy
 
-strokebind reads raw input devices and injects input events, so security reports are taken seriously.
+scrawl reads raw input devices and injects input events, so security reports are taken seriously.
 
 Report vulnerabilities privately through GitHub's "Report a vulnerability" (Security tab):
 https://github.com/IvanKosk0v/scrawl/security/advisories/new

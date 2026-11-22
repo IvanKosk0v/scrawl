@@ -9,6 +9,7 @@ pub mod device;
 pub mod error;
 pub mod focus;
 pub mod hyprland;
+pub mod migrate;
 pub mod overlay;
 pub mod passthrough;
 pub mod recognizer;

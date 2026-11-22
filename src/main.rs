@@ -15,6 +15,7 @@ use scrawl::device::virtual_mouse::{MouseCaps, VirtualMouse};
 use scrawl::error::Error;
 use scrawl::focus::Focused;
 use scrawl::hyprland::{socket_path, HyprlandAdapter};
+use scrawl::migrate;
 use scrawl::overlay::thread::{spawn, OverlayHandle};
 use scrawl::overlay::trail::TrailStyle;
 use scrawl::overlay::wayland::WaylandOverlay;
@@ -51,13 +52,7 @@ fn check_config(args: &CheckArgs) -> anyhow::Result<()> {
     let label = args.file.display().to_string();
     let report = match std::fs::read_to_string(&args.file) {
         Ok(src) => check(&label, &src),
-        Err(source) => Err(format!(
-            "error: {}\n",
-            Error::Io {
-                path: args.file.clone(),
-                source,
-            }
-        )),
+        Err(source) => Err(format!("error: {}\n", read_error(&args.file, source))),
     };
     match report {
         Ok(text) => {
@@ -75,11 +70,23 @@ fn check_config(args: &CheckArgs) -> anyhow::Result<()> {
 /// Load the config file if one was given.
 fn load_config(path: Option<&Path>) -> anyhow::Result<Option<Config>> {
     let Some(path) = path else { return Ok(None) };
-    let src = std::fs::read_to_string(path).map_err(|source| Error::Io {
-        path: path.to_path_buf(),
-        source,
-    })?;
+    let src = std::fs::read_to_string(path).map_err(|source| read_error(path, source))?;
     Ok(Some(Config::parse(&src)?))
+}
+
+/// The error for a config that cannot be read; names a leftover v0.1.0 config if there is one.
+fn read_error(path: &Path, source: std::io::Error) -> Error {
+    match migrate::old_config(path, migrate::config_home().as_deref()) {
+        Some(found) => Error::OldConfig {
+            path: path.to_path_buf(),
+            old: found.old,
+            mv: found.mv,
+        },
+        None => Error::Io {
+            path: path.to_path_buf(),
+            source,
+        },
+    }
 }
 
 /// The given device, or the first mouse found.

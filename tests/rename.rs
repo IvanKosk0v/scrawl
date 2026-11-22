@@ -6,20 +6,18 @@ use std::process::Command;
 /// The old name, split so this file does not match itself.
 const OLD: &str = concat!("stroke", "bind");
 
-/// Files that may mention the old name anywhere: history (STATE/PLAN) and this test.
-const ALLOWED_FILES: &[&str] = &["STATE.md", "PLAN.md", "tests/rename.rs"];
-
-/// Docs renamed by M10.2 (README/ARCHITECTURE/WORKFLOW/SECURITY prose, CLAUDE.md, reviewer agent),
-/// plus the README tests that quote README commands. M10.2 empties this list.
-const PENDING_M10_2: &[&str] = &[
-    "README.md",
-    "docs/ARCHITECTURE.md",
-    "docs/WORKFLOW.md",
-    "SECURITY.md",
-    "CLAUDE.md",
-    ".claude/agents/reviewer.md",
-    "tests/readme.rs",
+/// Files that may mention the old name anywhere: history (STATE/PLAN), the migration hint and
+/// its test, and this test.
+const ALLOWED_FILES: &[&str] = &[
+    "STATE.md",
+    "PLAN.md",
+    "src/migrate.rs",
+    "tests/migrate.rs",
+    "tests/rename.rs",
 ];
+
+/// README heading of the migration steps, which must name the old paths.
+const README_MIGRATION: &str = "## Migrating from";
 
 fn tracked_files() -> Vec<String> {
     let out = Command::new("git")
@@ -37,15 +35,27 @@ fn tracked_files() -> Vec<String> {
 }
 
 /// Lines of `text` that may not mention the old name: for CHANGELOG.md everything above the
-/// `## [0.1.0]` section, for other files every line.
+/// `## [0.1.0]` section except the `- Renamed` entry, for README.md everything outside the
+/// migration section, for other files every line.
 fn checked_lines<'a>(path: &str, text: &'a str) -> Vec<(usize, &'a str)> {
     let lines = text.lines().enumerate().map(|(i, l)| (i + 1, l));
-    if path == "CHANGELOG.md" {
-        lines
+    match path {
+        "CHANGELOG.md" => lines
             .take_while(|(_, l)| !l.starts_with("## [0.1.0]"))
-            .collect()
-    } else {
-        lines.collect()
+            .filter(|(_, l)| !l.starts_with("- Renamed"))
+            .collect(),
+        "README.md" => {
+            let mut in_migration = false;
+            lines
+                .filter(|(_, l)| {
+                    if l.starts_with("## ") {
+                        in_migration = l.starts_with(README_MIGRATION);
+                    }
+                    !in_migration
+                })
+                .collect()
+        }
+        _ => lines.collect(),
     }
 }
 
@@ -53,7 +63,7 @@ fn offenders() -> Vec<String> {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let mut bad = Vec::new();
     for path in tracked_files() {
-        if ALLOWED_FILES.contains(&path.as_str()) || PENDING_M10_2.contains(&path.as_str()) {
+        if ALLOWED_FILES.contains(&path.as_str()) {
             continue;
         }
         if path.to_lowercase().contains(OLD) {
@@ -83,6 +93,18 @@ fn changelog_history_is_allowed_but_unreleased_is_checked() {
     let lines = checked_lines("CHANGELOG.md", text);
     assert_eq!(lines.len(), 2);
     assert_eq!(checked_lines("src/lib.rs", text).len(), 4);
+    let changelog = "## [Unreleased]\n- Renamed to x\n- other\n";
+    assert_eq!(checked_lines("CHANGELOG.md", changelog).len(), 2);
+}
+
+#[test]
+fn readme_migration_section_is_allowed_and_nothing_else() {
+    let text = "# x\n## Install\na\n## Migrating from old\nb\nc\n## License\nd\n";
+    let kept: Vec<_> = checked_lines("README.md", text)
+        .into_iter()
+        .map(|(_, l)| l)
+        .collect();
+    assert_eq!(kept, ["# x", "## Install", "a", "## License", "d"]);
 }
 
 #[test]

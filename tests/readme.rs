@@ -62,13 +62,13 @@ fn every_toml_block_in_the_readme_passes_check_config() {
     for (i, block) in README.split("```toml\n").skip(1).enumerate() {
         let body = block.split("```").next().expect("closing fence");
         let path =
-            std::env::temp_dir().join(format!("strokebind-readme-{}-{i}.toml", std::process::id()));
+            std::env::temp_dir().join(format!("scrawl-readme-{}-{i}.toml", std::process::id()));
         std::fs::write(&path, body).expect("write temp config");
         let out = std::process::Command::new(env!("CARGO_BIN_EXE_scrawl"))
             .arg("check-config")
             .arg(&path)
             .output()
-            .expect("run strokebind");
+            .expect("run scrawl");
         let _ = std::fs::remove_file(&path);
         assert!(
             out.status.success(),
@@ -81,12 +81,12 @@ fn every_toml_block_in_the_readme_passes_check_config() {
 }
 
 #[test]
-fn every_strokebind_subcommand_and_flag_in_the_readme_exists() {
+fn every_scrawl_subcommand_and_flag_in_the_readme_exists() {
     let help = |args: &[&str]| {
         let out = std::process::Command::new(env!("CARGO_BIN_EXE_scrawl"))
             .args(args)
             .output()
-            .expect("run strokebind");
+            .expect("run scrawl");
         String::from_utf8_lossy(&out.stdout).into_owned()
     };
     let top = help(&["--help"]);
@@ -101,7 +101,7 @@ fn every_strokebind_subcommand_and_flag_in_the_readme_exists() {
         }
         if in_sh {
             let cmd = line.split(" #").next().unwrap_or_default().trim();
-            if cmd.starts_with("strokebind ") {
+            if cmd.starts_with("scrawl ") {
                 commands.push(cmd);
             }
         } else {
@@ -113,7 +113,7 @@ fn every_strokebind_subcommand_and_flag_in_the_readme_exists() {
     let mut checked_in_fence = 0;
     for cmd in commands {
         let mut words = cmd
-            .strip_prefix("strokebind ")
+            .strip_prefix("scrawl ")
             .into_iter()
             .flat_map(str::split_whitespace);
         let Some(sub) = words.next() else { continue };
@@ -123,7 +123,7 @@ fn every_strokebind_subcommand_and_flag_in_the_readme_exists() {
         assert!(top.contains(sub), "README uses unknown subcommand `{sub}`");
         let sub_help = help(&[sub, "--help"]);
         for flag in words.filter(|w| w.starts_with("--")) {
-            assert!(sub_help.contains(flag), "`strokebind {sub}` has no {flag}");
+            assert!(sub_help.contains(flag), "`scrawl {sub}` has no {flag}");
         }
         checked += 1;
         if README.contains(&format!("\n{cmd}")) {
@@ -138,10 +138,10 @@ fn every_strokebind_subcommand_and_flag_in_the_readme_exists() {
 }
 
 #[test]
-fn comparison_table_lists_strokebind_and_the_researched_tools() {
+fn comparison_table_lists_scrawl_and_the_researched_tools() {
     let c = section("Comparison");
     for name in [
-        "strokebind",
+        "scrawl",
         "Easystroke",
         "wstroke",
         "Input Actions",
